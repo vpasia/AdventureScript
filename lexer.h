@@ -16,7 +16,7 @@ typedef enum
 typedef struct LexItem
 {
     Token token;
-    char lexeme[128];
+    char* lexeme;
     int lineNum;
 } LexItem;
 
