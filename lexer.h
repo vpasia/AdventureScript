@@ -10,10 +10,10 @@ typedef enum
     ASK, CHOICE, IF, ELSE,
     CONDITION, EFFECT, CHARACTER,
     IDENT, STRING, DIALOGUE,
-    SAY
+    SAY, ERR, LCURLY, RCURLY, ARROW
 } Token;
 
-typedef struct LexItem
+typedef struct
 {
     Token token;
     char* lexeme;
