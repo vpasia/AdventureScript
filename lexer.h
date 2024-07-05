@@ -11,7 +11,8 @@ typedef enum
     PLAYER, DOT, RECEIVE, HAS, 
     EFFECT, CHARACTER,
     IDENT, STRING, DIALOGUE,
-    SAY, ERR, LCURLY, RCURLY, ARROW
+    SAY, ERR, LCURLY, RCURLY, ARROW,
+    LPAREN, RPAREN
 } Token;
 
 typedef struct
