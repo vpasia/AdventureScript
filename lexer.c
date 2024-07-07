@@ -1,12 +1,23 @@
 #include "lexer.h"
+#include "map.h"
 
 #include <ctype.h>
 #include <stdbool.h>
 
 typedef enum { START, INID, INSTRING, INCOMMENT } TokenState;
 
-//TODO: probably a good idea to implement a function that resizes the lexeme buffer to exactly the amount of memory
-// needed to store the string since addCharToLexeme just doubles the current size of the buffer
+Map* keywords;
+Map* delimiters;
+
+void InitializeMaps()
+{
+    if(keywords == NULL && delimiters == NULL)
+    {
+        keywords = createMap();
+        delimiters = createMap();
+    }
+}
+
 
 bool addCharToLexeme(char* lexeme, int* lexemeIndex, char character)
 {
@@ -30,9 +41,23 @@ bool addCharToLexeme(char* lexeme, int* lexemeIndex, char character)
     return true;
 }
 
+void refitLexemeBuffer(char* buffer)
+{
+    size_t actualSize = strlen(buffer) + 1;
+    char* tmp = realloc(buffer, actualSize);
+
+    if(tmp != NULL)
+    {
+        buffer = tmp;
+    }
+}
+
 LexItem getNextToken(FILE* input, int* linenum)
 {
+    InitializeMaps();
+
     TokenState state = START;
+
     char* lexeme = malloc(5);
     int lexemeIdx = 0;
     char ch;
@@ -73,8 +98,16 @@ LexItem getNextToken(FILE* input, int* linenum)
                     continue;
                 }
 
-                if(strcmp(lexeme, "-") == 0) continue;
-                else if(strcmp(lexeme, "->") == 0) return (LexItem) {ARROW, lexeme, *linenum};
+                if(strcmp(lexeme, "-") == 0)
+                {
+                    continue;    
+                }
+                else if(strcmp(lexeme, "->") == 0)
+                {
+                    refitLexemeBuffer(lexeme);
+                    return (LexItem) {ARROW, lexeme, *linenum};
+                }
+
                 break;
             case INID:
                 break;
@@ -88,6 +121,7 @@ LexItem getNextToken(FILE* input, int* linenum)
 
                 if(ch == '"' || ch == '\'')
                 {
+                    refitLexemeBuffer(lexeme);
                     return lexeme[0] == ch ? (LexItem){STRING, lexeme, *linenum} : (LexItem){ERR, lexeme, *linenum};
                 }
                 break;
