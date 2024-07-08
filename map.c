@@ -23,7 +23,8 @@ Map* createMap()
 	m->capacity = INITIAL_MAP_CAPACITY;
 	m->count = 0;
 
-	m->values = calloc(INITIAL_MAP_CAPACITY, sizeof(MapValue));
+	m->keys = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
+	m->values = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
 	if(m->values == NULL)
 	{
 		free(m);
@@ -35,6 +36,7 @@ Map* createMap()
 
 void freeMap(Map* map)
 {
+	free(map->keys);
 	free(map->values);
 	free(map);
 }
@@ -43,20 +45,21 @@ bool setItem(Map* map, const char* key, void* value)
 {
 	if(map->count == map->capacity)
 	{
-		size_t newSize = sizeof(MapValue) * (map->capacity) * 2;
-		MapValue* tmp = realloc(map->values, newSize);
+		size_t newSize = sizeof(MapEntry) * (map->capacity) * 2;
 
-		if(tmp != NULL)
+		MapEntry* tmpKeys = realloc(map->keys, newSize);
+		MapEntry* tmpVals = realloc(map->values, newSize);
+
+		if(tmpVals != NULL && tmpKeys != NULL)
 		{
-			map->values = tmp;
+			map->keys = tmpKeys;
+			map->values = tmpVals;
 			map->capacity *= 2;
 		}
 		else
 		{
-			printf("Failed to Resize Map");
 			return false;
 		}
-
 	}
 
 
@@ -64,6 +67,7 @@ bool setItem(Map* map, const char* key, void* value)
 	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
 
 	if(map->values[index].value == NULL) map->count++;
+	map->keys[index].value = (void*)key;
 	map->values[index].value = value;
 	return true;
 }
@@ -72,6 +76,13 @@ void* getItem(Map* map, const char* key)
 {
 	uint64_t hash = hash_key(key);
 	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
+
+	char* retrievedKey = (char*)map->keys[index].value;
+
+	if(strcmp(key, retrievedKey) != 0)
+	{
+		return (void*)(-1);
+	}
 
 	return map->values[index].value;
 }

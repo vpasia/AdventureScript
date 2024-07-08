@@ -9,13 +9,41 @@ typedef enum { START, INID, INSTRING, INCOMMENT } TokenState;
 Map* keywords;
 Map* delimiters;
 
-void InitializeMaps()
+bool InitializeMaps()
 {
     if(keywords == NULL && delimiters == NULL)
     {
         keywords = createMap();
         delimiters = createMap();
+
+        bool isAdded = setItem(keywords, "item", (void*)ITEM)
+                        && setItem(keywords, "scene", (void*)SCENE)
+                        && setItem(keywords, "describe", (void*)DESCRIBE)
+                        && setItem(keywords, "ask", (void*)ASK)
+                        && setItem(keywords, "choice", (void*)CHOICE)
+                        && setItem(keywords, "if", (void*)IF)
+                        && setItem(keywords, "else", (void*)ELSE)
+                        && setItem(keywords, "player", (void*)PLAYER)
+                        && setItem(keywords, "receive", (void*)RECEIVE)
+                        && setItem(keywords, "has", (void*)HAS)
+                        && setItem(keywords, "effect", (void*)EFFECT)
+                        && setItem(keywords, "character", (void*)CHARACTER)
+                        && setItem(keywords, "dialogue", (void*)DIALOGUE)
+                        && setItem(keywords, "say", (void*)SAY);
+        
+        if(!isAdded) return isAdded;
+
+        isAdded = setItem(delimiters, ".", (void*)DOT)
+                    && setItem(delimiters, "{", (void*)LCURLY)
+                    && setItem(delimiters, "}", (void*)RCURLY)
+                    && setItem(delimiters, "(", (void*)LPAREN)
+                    && setItem(delimiters, ")", (void*)RPAREN)
+                    && setItem(delimiters, "->", (void*)ARROW);
+        
+        return isAdded;
     }
+
+    return true;
 }
 
 
@@ -54,7 +82,7 @@ void refitLexemeBuffer(char* buffer)
 
 LexItem getNextToken(FILE* input, int* linenum)
 {
-    InitializeMaps();
+    if(!InitializeMaps()) return (LexItem){ERR, "Failed To Initialize Token Maps.", *linenum};
 
     TokenState state = START;
 
@@ -67,12 +95,12 @@ LexItem getNextToken(FILE* input, int* linenum)
         switch(state)
         {
             case START:
-                if(ch == '\n' && lexeme == NULL)
+                if(ch == '\n' && strlen(lexeme) == 0)
                 {
                     (*linenum)++;
                     continue;
                 }
-                else if(isspace(ch) && lexeme == NULL)
+                else if(isspace(ch) && strlen(lexeme) == 0)
                 {
                     continue;
                 }
@@ -97,20 +125,38 @@ LexItem getNextToken(FILE* input, int* linenum)
                     state = INSTRING;
                     continue;
                 }
-
-                if(strcmp(lexeme, "-") == 0)
+                
+                int* posDelim = (int*)getItem(delimiters, lexeme);
+                if(*posDelim != -1)
                 {
-                    continue;    
-                }
-                else if(strcmp(lexeme, "->") == 0)
-                {
+                    Token token = (Token)(intptr_t)posDelim;
                     refitLexemeBuffer(lexeme);
-                    return (LexItem) {ARROW, lexeme, *linenum};
+                    return (LexItem) {token, lexeme, *linenum};
                 }
 
                 break;
+            
             case INID:
+                if(!isalpha(ch))
+                {
+                    ungetc(ch, input);
+
+                    int* posKeyword = (int*)getItem(keywords, lexeme);
+                    if(*posKeyword != -1)
+                    {
+                        Token token = (Token)(intptr_t)posKeyword;
+                        refitLexemeBuffer(lexeme);
+                        return (LexItem) {token, lexeme, *linenum};
+                    }
+                }
+                
+                if(!addCharToLexeme(lexeme, &lexemeIdx, ch))
+                {
+                    return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
+                }
+
                 break;
+            
             case INSTRING:
                 if(ch == '\n') return (LexItem) {ERR, lexeme, *linenum};
 
@@ -125,6 +171,7 @@ LexItem getNextToken(FILE* input, int* linenum)
                     return lexeme[0] == ch ? (LexItem){STRING, lexeme, *linenum} : (LexItem){ERR, lexeme, *linenum};
                 }
                 break;
+            
             case INCOMMENT:
                 if(ch == '\n')
                 {

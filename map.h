@@ -13,12 +13,13 @@
 typedef struct
 {
 	void* value;
-} MapValue;
+} MapEntry;
 
 
 typedef struct
 {
-	MapValue* values;
+	MapEntry* keys;
+	MapEntry* values;
 	int capacity;
 	int count;
 } Map;
