@@ -10,9 +10,10 @@ typedef enum
     ASK, CHOICE, IF, ELSE,
     PLAYER, DOT, RECEIVE, HAS, 
     EFFECT, CHARACTER, STRING, 
-    DIALOGUE, SAY, ERR, 
-    LCURLY, RCURLY, ARROW,
-    LPAREN, RPAREN
+    DIALOGUE, SAY, ARROW,
+    LCURLY, RCURLY, 
+    LPAREN, RPAREN, 
+    ERR, DONE
 } Token;
 
 typedef struct

@@ -90,7 +90,7 @@ LexItem getNextToken(FILE* input, int* linenum)
     int lexemeIdx = 0;
     char ch;
 
-    while(ch = fgetc(input))
+    while((ch = fgetc(input)) != EOF)
     {
         switch(state)
         {
@@ -183,4 +183,11 @@ LexItem getNextToken(FILE* input, int* linenum)
                 break;
         }
     }
+
+    if(feof(input))
+    {
+        return (LexItem){DONE, "Finished", *linenum};
+    }
+
+    return (LexItem){ERR, "IO Error", *linenum};
 }
