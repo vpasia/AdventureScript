@@ -46,6 +46,12 @@ bool InitializeMaps()
     return true;
 }
 
+void freeTokenMaps()
+{
+    freeMap(keywords);
+    freeMap(delimiters);
+}
+
 
 bool addCharToLexeme(char* lexeme, int* lexemeIndex, char character)
 {
@@ -107,6 +113,7 @@ LexItem getNextToken(FILE* input, int* linenum)
 
                 if(!addCharToLexeme(lexeme, &lexemeIdx, ch))
                 {
+                    freeTokenMaps();
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
                 }
 
@@ -152,16 +159,22 @@ LexItem getNextToken(FILE* input, int* linenum)
                 
                 if(!addCharToLexeme(lexeme, &lexemeIdx, ch))
                 {
+                    freeTokenMaps();
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
                 }
 
                 break;
             
             case INSTRING:
-                if(ch == '\n') return (LexItem) {ERR, lexeme, *linenum};
+                if(ch == '\n')
+                {
+                    freeTokenMaps();
+                    return (LexItem) {ERR, lexeme, *linenum};
+                }
 
                 if(!addCharToLexeme(lexeme, &lexemeIdx, ch))
                 {
+                    freeTokenMaps();
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
                 }
 
@@ -186,8 +199,10 @@ LexItem getNextToken(FILE* input, int* linenum)
 
     if(feof(input))
     {
+        freeTokenMaps();
         return (LexItem){DONE, "Finished", *linenum};
     }
 
+    freeTokenMaps();
     return (LexItem){ERR, "IO Error", *linenum};
 }

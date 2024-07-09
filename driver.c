@@ -51,7 +51,13 @@ int main(int argc, char** argv)
         exit(1);
     }
 
+    LexItem tok;
+    int lineNum = 1;
 
+    while((tok = getNextToken(inputFile, &lineNum)).token != DONE && tok.token != ERR)
+    {
+        
+    }
 
     return 0;
 }
