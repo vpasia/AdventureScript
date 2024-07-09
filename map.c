@@ -25,9 +25,9 @@ Map* createMap()
 
 	m->keys = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
 	m->values = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
-	if(m->values == NULL)
+	if(m->keys == NULL || m->values == NULL)
 	{
-		free(m);
+		freeMap(m);
 		return NULL;
 	}
 
@@ -52,6 +52,9 @@ bool setItem(Map* map, const char* key, void* value)
 
 		if(tmpVals != NULL && tmpKeys != NULL)
 		{
+			free(map->keys);
+			free(map->values);
+
 			map->keys = tmpKeys;
 			map->values = tmpVals;
 			map->capacity *= 2;
@@ -67,7 +70,7 @@ bool setItem(Map* map, const char* key, void* value)
 	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
 
 	if(map->values[index].value == NULL) map->count++;
-	map->keys[index].value = (void*)key;
+	map->keys[index].value = (void*)strdup(key);
 	map->values[index].value = value;
 	return true;
 }

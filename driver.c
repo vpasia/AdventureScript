@@ -4,6 +4,35 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char* tokenToString(Token token) 
+{
+    switch (token) 
+    {
+        case ITEM: return "ITEM";
+        case SCENE: return "SCENE";
+        case DESCRIBE: return "DESCRIBE";
+        case ASK: return "ASK";
+        case CHOICE: return "CHOICE";
+        case IF: return "IF";
+        case ELSE: return "ELSE";
+        case PLAYER: return "PLAYER";
+        case RECEIVE: return "RECEIVE";
+        case HAS: return "HAS";
+        case EFFECT: return "EFFECT";
+        case CHARACTER: return "CHARACTER";
+        case DIALOGUE: return "DIALOGUE";
+        case SAY: return "SAY";
+        case DOT: return ".";
+        case LCURLY: return "{";
+        case RCURLY: return "}";
+        case LPAREN: return "(";
+        case RPAREN: return ")";
+        case ARROW: return "->";
+        case DONE: return "DONE";
+        default: return "ERR";  // Return this if the token is not recognized
+    }
+}
+
 int indexOf(char* str, char ch)
 {
     char* pos = strstr(str, ch);
@@ -52,11 +81,22 @@ int main(int argc, char** argv)
     }
 
     LexItem tok;
-    int lineNum = 1;
+    int linenum = 1;
 
-    while((tok = getNextToken(inputFile, &lineNum)).token != DONE && tok.token != ERR)
+    while((tok = getNextToken(inputFile, &linenum)).token != DONE && tok.token != ERR)
     {
-        
+        printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
+        free(tok.lexeme);
+    }
+
+    if(tok.token == DONE)
+    {
+        printf("Successfully Processed Lexemes \n");
+    }
+    else
+    {
+        printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
+        free(tok.lexeme);
     }
 
     return 0;
