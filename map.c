@@ -86,4 +86,3 @@ void* getItem(Map* map, const char* key)
 
 	return map->values[index].value;
 }
-
