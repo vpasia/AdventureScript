@@ -38,6 +38,13 @@ Map* createMap()
 
 void freeMap(Map* map)
 {
+	int i;
+	for(i = 0; i < map->capacity; i++)
+	{
+		free(map->keys[i].value);
+		free(map->values[i].value);
+	}
+
 	free(map->keys);
 	free(map->values);
 	free(map);
@@ -73,7 +80,7 @@ bool setItem(Map** map, const char* key, void* value)
 
 	if((*map)->values[index].value == NULL) (*map)->count++;
 
-	(*map)->keys[index].value = (void*)key;
+	(*map)->keys[index].value = strdup(key);
 	(*map)->values[index].value = value;
 	return true;
 }
