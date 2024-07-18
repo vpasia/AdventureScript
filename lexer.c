@@ -3,11 +3,12 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
 
 typedef enum { START, INID, INSTRING, INCOMMENT } TokenState;
 
-Map* keywords;
-Map* delimiters;
+Map* keywords = NULL;
+Map* delimiters = NULL;
 
 bool InitializeMaps()
 {
@@ -16,29 +17,29 @@ bool InitializeMaps()
         keywords = createMap();
         delimiters = createMap();
 
-        bool isAdded = setItem(keywords, "item", (void*)ITEM)
-                        && setItem(keywords, "scene", (void*)SCENE)
-                        && setItem(keywords, "describe", (void*)DESCRIBE)
-                        && setItem(keywords, "ask", (void*)ASK)
-                        && setItem(keywords, "choice", (void*)CHOICE)
-                        && setItem(keywords, "if", (void*)IF)
-                        && setItem(keywords, "else", (void*)ELSE)
-                        && setItem(keywords, "player", (void*)PLAYER)
-                        && setItem(keywords, "receive", (void*)RECEIVE)
-                        && setItem(keywords, "has", (void*)HAS)
-                        && setItem(keywords, "effect", (void*)EFFECT)
-                        && setItem(keywords, "character", (void*)CHARACTER)
-                        && setItem(keywords, "dialogue", (void*)DIALOGUE)
-                        && setItem(keywords, "say", (void*)SAY);
+        bool isAdded = setItem(&keywords, "item", (void*)ITEM)
+                        && setItem(&keywords, "scene", (void*)SCENE)
+                        && setItem(&keywords, "describe", (void*)DESCRIBE)
+                        && setItem(&keywords, "ask", (void*)ASK)
+                        && setItem(&keywords, "choice", (void*)CHOICE)
+                        && setItem(&keywords, "if", (void*)IF)
+                        && setItem(&keywords, "else", (void*)ELSE)
+                        && setItem(&keywords, "player", (void*)PLAYER)
+                        && setItem(&keywords, "receive", (void*)RECEIVE)
+                        && setItem(&keywords, "has", (void*)HAS)
+                        && setItem(&keywords, "effect", (void*)EFFECT)
+                        && setItem(&keywords, "character", (void*)CHARACTER)
+                        && setItem(&keywords, "dialogue", (void*)DIALOGUE)
+                        && setItem(&keywords, "say", (void*)SAY);
         
         if(!isAdded) return isAdded;
 
-        isAdded = setItem(delimiters, ".", (void*)DOT)
-                    && setItem(delimiters, "{", (void*)LCURLY)
-                    && setItem(delimiters, "}", (void*)RCURLY)
-                    && setItem(delimiters, "(", (void*)LPAREN)
-                    && setItem(delimiters, ")", (void*)RPAREN)
-                    && setItem(delimiters, "->", (void*)ARROW);
+        isAdded = setItem(&delimiters, ".", (void*)DOT)
+                    && setItem(&delimiters, "{", (void*)LCURLY)
+                    && setItem(&delimiters, "}", (void*)RCURLY)
+                    && setItem(&delimiters, "(", (void*)LPAREN)
+                    && setItem(&delimiters, ")", (void*)RPAREN)
+                    && setItem(&delimiters, "->", (void*)ARROW);
         
         return isAdded;
     }
@@ -53,17 +54,16 @@ void freeTokenMaps()
 }
 
 
-bool addCharToLexeme(char* lexeme, int* lexemeIndex, char character)
+bool addCharToLexeme(char** lexeme, int* lexemeIndex, char character)
 {
-    size_t currentSize = strlen(lexeme);
-
-    if(currentSize == (*lexemeIndex))
+    if((*lexeme)[(*lexemeIndex)] == '\0')
     {
-        char* tmp = realloc(lexeme, (currentSize * 2) + 1);
+        char* tmp = realloc(*lexeme, (strlen(*lexeme) * 2) + 1);
 
         if(tmp != NULL)
         {
-            lexeme = tmp;
+            *lexeme = tmp;
+            (*lexeme)[strlen(*lexeme)] = '\0';
         }
         else
         {
@@ -71,18 +71,18 @@ bool addCharToLexeme(char* lexeme, int* lexemeIndex, char character)
         }
     }
 
-    lexeme[(*lexemeIndex)++] = character;
+    (*lexeme)[(*lexemeIndex)++] = character;
     return true;
 }
 
-void refitLexemeBuffer(char* buffer)
+void refitLexemeBuffer(char** buffer)
 {
-    size_t actualSize = strlen(buffer) + 1;
-    char* tmp = realloc(buffer, actualSize);
+    size_t actualSize = strlen(*buffer) + 1;
+    char* tmp = realloc(*buffer, actualSize);
 
     if(tmp != NULL)
     {
-        buffer = tmp;
+        *buffer = tmp;
     }
 }
 
@@ -92,7 +92,9 @@ LexItem getNextToken(FILE* input, int* linenum)
 
     TokenState state = START;
 
-    char* lexeme = malloc(5);
+    char* lexeme = malloc(1);
+    lexeme[0] = '\0';
+
     int lexemeIdx = 0;
     char ch;
 
@@ -111,7 +113,7 @@ LexItem getNextToken(FILE* input, int* linenum)
                     continue;
                 }
 
-                if(!addCharToLexeme(lexeme, &lexemeIdx, ch))
+                if(!addCharToLexeme(&lexeme, &lexemeIdx, ch))
                 {
                     freeTokenMaps();
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
@@ -132,12 +134,12 @@ LexItem getNextToken(FILE* input, int* linenum)
                     state = INSTRING;
                     continue;
                 }
-                
+
+                refitLexemeBuffer(&lexeme);
                 int* posDelim = (int*)getItem(delimiters, lexeme);
-                if(*posDelim != -1)
+                if(posDelim != NULL)
                 {
                     Token token = (Token)(intptr_t)posDelim;
-                    refitLexemeBuffer(lexeme);
                     return (LexItem) {token, lexeme, *linenum};
                 }
 
@@ -148,16 +150,21 @@ LexItem getNextToken(FILE* input, int* linenum)
                 {
                     ungetc(ch, input);
 
+                    refitLexemeBuffer(&lexeme);
                     int* posKeyword = (int*)getItem(keywords, lexeme);
-                    if(*posKeyword != -1)
+
+                    if(posKeyword != NULL)
                     {
                         Token token = (Token)(intptr_t)posKeyword;
-                        refitLexemeBuffer(lexeme);
                         return (LexItem) {token, lexeme, *linenum};
+                    }
+                    else
+                    {
+                        return (LexItem){ERR, lexeme, *linenum};
                     }
                 }
                 
-                if(!addCharToLexeme(lexeme, &lexemeIdx, ch))
+                if(!addCharToLexeme(&lexeme, &lexemeIdx, ch))
                 {
                     freeTokenMaps();
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
@@ -172,7 +179,7 @@ LexItem getNextToken(FILE* input, int* linenum)
                     return (LexItem) {ERR, lexeme, *linenum};
                 }
 
-                if(!addCharToLexeme(lexeme, &lexemeIdx, ch))
+                if(!addCharToLexeme(&lexeme, &lexemeIdx, ch))
                 {
                     freeTokenMaps();
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
@@ -180,7 +187,7 @@ LexItem getNextToken(FILE* input, int* linenum)
 
                 if(ch == '"' || ch == '\'')
                 {
-                    refitLexemeBuffer(lexeme);
+                    refitLexemeBuffer(&lexeme);
                     return lexeme[0] == ch ? (LexItem){STRING, lexeme, *linenum} : (LexItem){ERR, lexeme, *linenum};
                 }
                 break;
@@ -189,7 +196,9 @@ LexItem getNextToken(FILE* input, int* linenum)
                 if(ch == '\n')
                 {
                     free(lexeme);
-                    lexeme = malloc(5);
+                    lexeme = malloc(1);
+                    lexeme[0] = '\0';
+
                     lexemeIdx = 0;
                     (*linenum)++;
                 }

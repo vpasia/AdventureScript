@@ -29,13 +29,13 @@ const char* tokenToString(Token token)
         case RPAREN: return ")";
         case ARROW: return "->";
         case DONE: return "DONE";
-        default: return "ERR";  // Return this if the token is not recognized
+        default: return "ERR";
     }
 }
 
 int indexOf(char* str, char ch)
 {
-    char* pos = strstr(str, ch);
+    char* pos = strchr(str, ch);
     return pos ? pos - str : -1;
 }
 
@@ -44,11 +44,13 @@ char* substring(char* str, int start, int end)
     int len = end - start;
     char* substr = malloc(len + 1);
 
-    int i = 0;
-    for(i; i < len; i++)
+    int i;
+    for(i = 0; i < len; i++)
     {
         substr[i] = str[start + i];
     }
+
+    substr[len] = '\0';
 
     return substr;
 }
@@ -82,7 +84,7 @@ int main(int argc, char** argv)
 
     LexItem tok;
     int linenum = 1;
-
+    printf("Starting Lexing...\n");
     while((tok = getNextToken(inputFile, &linenum)).token != DONE && tok.token != ERR)
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
@@ -98,6 +100,8 @@ int main(int argc, char** argv)
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
         free(tok.lexeme);
     }
+
+    fclose(inputFile);
 
     return 0;
 }

@@ -1,0 +1,56 @@
+# Define items
+item "Sword"
+item "Shield"
+
+# Define characters
+character "Guardian" {
+    dialogue {
+        say "Welcome, brave warrior. Do you wish to enter the castle?"
+        ask {
+            choice "Yes" -> effect "The guardian opens the castle gate."
+            choice "No" -> effect "The guardian nods and steps aside."
+        }
+    }
+}
+
+# Define scenes
+scene "Start" {
+    describe "You find yourself at the edge of a dense forest, with a path leading towards a distant castle."
+    
+    ask "What will you do?" {
+        choice "Head to the castle" -> scene "Castle Gate"
+        choice "Enter the forest" -> scene "Forest Path"
+    }
+}
+
+scene "Castle Gate" {
+    describe "You stand before the grand gate of the castle. A guardian stands watch."
+
+    ask "Do you approach the guardian?" {
+        choice "Yes" -> dialogue "Guardian"
+        choice "No" -> effect "You decide to explore the surroundings."
+    }
+}
+
+scene "Forest Path" {
+    describe "The forest is dark and quiet. You hear rustling in the bushes."
+
+    ask "Do you investigate the sound?" {
+        choice "Yes" -> if player.has("Sword") {
+            effect "You draw your sword and approach the sound."
+            scene "Forest Clearing"
+        } else {
+            effect "You feel vulnerable without a weapon and decide to head back."
+        }
+        choice "No" -> scene "Start"
+    }
+}
+
+scene "Forest Clearing" {
+    describe "You discover a hidden clearing with a mysterious altar in the center."
+
+    ask "Do you approach the altar?" {
+        choice "Yes" -> effect "A bright light envelops you, and you feel a surge of power."
+        choice "No" -> effect "You decide it's too dangerous and head back."
+    }
+}

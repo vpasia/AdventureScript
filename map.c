@@ -1,5 +1,6 @@
 #include "map.h"
 
+
 static uint64_t hash_key(const char* key)
 {
 	uint64_t hash = FNV_OFFSET;
@@ -25,6 +26,7 @@ Map* createMap()
 
 	m->keys = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
 	m->values = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
+
 	if(m->keys == NULL || m->values == NULL)
 	{
 		freeMap(m);
@@ -41,23 +43,23 @@ void freeMap(Map* map)
 	free(map);
 }
 
-bool setItem(Map* map, const char* key, void* value)
+bool setItem(Map** map, const char* key, void* value)
 {
-	if(map->count == map->capacity)
+	if((*map)->count == (*map)->capacity)
 	{
-		size_t newSize = sizeof(MapEntry) * (map->capacity) * 2;
+		size_t newSize = sizeof(MapEntry) * ((*map)->capacity) * 2;
 
-		MapEntry* tmpKeys = realloc(map->keys, newSize);
-		MapEntry* tmpVals = realloc(map->values, newSize);
+		MapEntry* tmpKeys = realloc((*map)->keys, newSize);
+		MapEntry* tmpVals = realloc((*map)->values, newSize);
 
 		if(tmpVals != NULL && tmpKeys != NULL)
 		{
-			free(map->keys);
-			free(map->values);
+			free((*map)->keys);
+			free((*map)->values);
 
-			map->keys = tmpKeys;
-			map->values = tmpVals;
-			map->capacity *= 2;
+			(*map)->keys = tmpKeys;
+			(*map)->values = tmpVals;
+			(*map)->capacity *= 2;
 		}
 		else
 		{
@@ -67,11 +69,12 @@ bool setItem(Map* map, const char* key, void* value)
 
 
 	uint64_t hash = hash_key(key);
-	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
+	size_t index = (size_t)(hash & (uint64_t)((*map)->capacity - 1));
 
-	if(map->values[index].value == NULL) map->count++;
-	map->keys[index].value = (void*)strdup(key);
-	map->values[index].value = value;
+	if((*map)->values[index].value == NULL) (*map)->count++;
+
+	(*map)->keys[index].value = (void*)key;
+	(*map)->values[index].value = value;
 	return true;
 }
 
@@ -84,7 +87,7 @@ void* getItem(Map* map, const char* key)
 
 	if(strcmp(key, retrievedKey) != 0)
 	{
-		return (void*)(-1);
+		return NULL;
 	}
 
 	return map->values[index].value;
