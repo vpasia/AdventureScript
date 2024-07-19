@@ -24,10 +24,9 @@ Map* createMap()
 	m->capacity = INITIAL_MAP_CAPACITY;
 	m->count = 0;
 
-	m->keys = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
-	m->values = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
+	m->entries = calloc(INITIAL_MAP_CAPACITY, sizeof(MapEntry));
 
-	if(m->keys == NULL || m->values == NULL)
+	if(m->entries == NULL)
 	{
 		freeMap(m);
 		return NULL;
@@ -38,35 +37,22 @@ Map* createMap()
 
 void freeMap(Map* map)
 {
-	int i;
-	for(i = 0; i < map->capacity; i++)
-	{
-		free(map->keys[i].value);
-		free(map->values[i].value);
-	}
-
-	free(map->keys);
-	free(map->values);
+	free(map->entries);
 	free(map);
 }
 
-bool setItem(Map** map, const char* key, void* value)
+bool setItem(Map* map, const char* key, void* value)
 {
-	if((*map)->count == (*map)->capacity)
+	if(map->count == map->capacity)
 	{
-		size_t newSize = sizeof(MapEntry) * ((*map)->capacity) * 2;
+		size_t newSize = sizeof(MapEntry) * (map->capacity) * 2;
 
-		MapEntry* tmpKeys = realloc((*map)->keys, newSize);
-		MapEntry* tmpVals = realloc((*map)->values, newSize);
+		MapEntry* tmpEntries = realloc(map->entries, newSize);
 
-		if(tmpVals != NULL && tmpKeys != NULL)
+		if(tmpEntries != NULL)
 		{
-			free((*map)->keys);
-			free((*map)->values);
-
-			(*map)->keys = tmpKeys;
-			(*map)->values = tmpVals;
-			(*map)->capacity *= 2;
+			map->entries = tmpEntries;
+			map->capacity *= 2;
 		}
 		else
 		{
@@ -76,12 +62,12 @@ bool setItem(Map** map, const char* key, void* value)
 
 
 	uint64_t hash = hash_key(key);
-	size_t index = (size_t)(hash & (uint64_t)((*map)->capacity - 1));
+	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
 
-	if((*map)->values[index].value == NULL) (*map)->count++;
+	if(map->entries[index].key == NULL) map->count++;
 
-	(*map)->keys[index].value = strdup(key);
-	(*map)->values[index].value = value;
+	map->entries[index].key = strdup(key);
+	map->entries[index].value = value;
 	return true;
 }
 
@@ -90,12 +76,12 @@ void* getItem(Map* map, const char* key)
 	uint64_t hash = hash_key(key);
 	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
 
-	char* retrievedKey = (char*)map->keys[index].value;
+	char* retrievedKey = (char*)map->entries[index].key;
 
-	if(strcmp(key, retrievedKey) != 0)
+	if(retrievedKey == NULL)
 	{
 		return NULL;
 	}
 
-	return map->values[index].value;
+	return map->entries[index].value;
 }

@@ -13,14 +13,14 @@
 
 typedef struct
 {
+	const char* key;
 	void* value;
 } MapEntry;
 
 
 typedef struct
 {
-	MapEntry* keys;
-	MapEntry* values;
+	MapEntry* entries;
 	int capacity;
 	int count;
 } Map;
@@ -30,7 +30,7 @@ static uint64_t hash_key(const char* key);
 Map* createMap();
 void freeMap(Map* map);
 
-bool setItem(Map** map, const char* key, void* value);
+bool setItem(Map* map, const char* key, void* value);
 void* getItem(Map* map, const char* key);
 
 #endif

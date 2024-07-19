@@ -17,29 +17,29 @@ bool InitializeMaps()
         keywords = createMap();
         delimiters = createMap();
 
-        bool isAdded = setItem(&keywords, "item", (void*)ITEM)
-                        && setItem(&keywords, "scene", (void*)SCENE)
-                        && setItem(&keywords, "describe", (void*)DESCRIBE)
-                        && setItem(&keywords, "ask", (void*)ASK)
-                        && setItem(&keywords, "choice", (void*)CHOICE)
-                        && setItem(&keywords, "if", (void*)IF)
-                        && setItem(&keywords, "else", (void*)ELSE)
-                        && setItem(&keywords, "player", (void*)PLAYER)
-                        && setItem(&keywords, "receive", (void*)RECEIVE)
-                        && setItem(&keywords, "has", (void*)HAS)
-                        && setItem(&keywords, "effect", (void*)EFFECT)
-                        && setItem(&keywords, "character", (void*)CHARACTER)
-                        && setItem(&keywords, "dialogue", (void*)DIALOGUE)
-                        && setItem(&keywords, "say", (void*)SAY);
+        bool isAdded = setItem(keywords, "item", (void*)ITEM)
+                        && setItem(keywords, "scene", (void*)SCENE)
+                        && setItem(keywords, "describe", (void*)DESCRIBE)
+                        && setItem(keywords, "ask", (void*)ASK)
+                        && setItem(keywords, "choice", (void*)CHOICE)
+                        && setItem(keywords, "if", (void*)IF)
+                        && setItem(keywords, "else", (void*)ELSE)
+                        && setItem(keywords, "player", (void*)PLAYER)
+                        && setItem(keywords, "receive", (void*)RECEIVE)
+                        && setItem(keywords, "has", (void*)HAS)
+                        && setItem(keywords, "effect", (void*)EFFECT)
+                        && setItem(keywords, "character", (void*)CHARACTER)
+                        && setItem(keywords, "dialogue", (void*)DIALOGUE)
+                        && setItem(keywords, "say", (void*)SAY);
         
         if(!isAdded) return isAdded;
 
-        isAdded = setItem(&delimiters, ".", (void*)DOT)
-                    && setItem(&delimiters, "{", (void*)LCURLY)
-                    && setItem(&delimiters, "}", (void*)RCURLY)
-                    && setItem(&delimiters, "(", (void*)LPAREN)
-                    && setItem(&delimiters, ")", (void*)RPAREN)
-                    && setItem(&delimiters, "->", (void*)ARROW);
+        isAdded = setItem(delimiters, ".", (void*)DOT)
+                    && setItem(delimiters, "{", (void*)LCURLY)
+                    && setItem(delimiters, "}", (void*)RCURLY)
+                    && setItem(delimiters, "(", (void*)LPAREN)
+                    && setItem(delimiters, ")", (void*)RPAREN)
+                    && setItem(delimiters, "->", (void*)ARROW);
         
         return isAdded;
     }
@@ -53,17 +53,15 @@ void freeTokenMaps()
     freeMap(delimiters);
 }
 
-
 bool addCharToLexeme(char** lexeme, int* lexemeIndex, char character)
 {
     if((*lexeme)[(*lexemeIndex)] == '\0')
     {
-        char* tmp = realloc(*lexeme, (strlen(*lexeme) * 2) + 1);
+        char* tmp = realloc(*lexeme, (*lexemeIndex) + 2);
 
         if(tmp != NULL)
         {
             *lexeme = tmp;
-            (*lexeme)[strlen(*lexeme)] = '\0';
         }
         else
         {
@@ -72,18 +70,8 @@ bool addCharToLexeme(char** lexeme, int* lexemeIndex, char character)
     }
 
     (*lexeme)[(*lexemeIndex)++] = character;
+    (*lexeme)[*lexemeIndex] = '\0';
     return true;
-}
-
-void refitLexemeBuffer(char** buffer)
-{
-    size_t actualSize = strlen(*buffer) + 1;
-    char* tmp = realloc(*buffer, actualSize);
-
-    if(tmp != NULL)
-    {
-        *buffer = tmp;
-    }
 }
 
 LexItem getNextToken(FILE* input, int* linenum)
@@ -135,7 +123,6 @@ LexItem getNextToken(FILE* input, int* linenum)
                     continue;
                 }
 
-                refitLexemeBuffer(&lexeme);
                 int* posDelim = (int*)getItem(delimiters, lexeme);
                 if(posDelim != NULL)
                 {
@@ -150,7 +137,6 @@ LexItem getNextToken(FILE* input, int* linenum)
                 {
                     ungetc(ch, input);
 
-                    refitLexemeBuffer(&lexeme);
                     int* posKeyword = (int*)getItem(keywords, lexeme);
 
                     if(posKeyword != NULL)
@@ -187,7 +173,6 @@ LexItem getNextToken(FILE* input, int* linenum)
 
                 if(ch == '"' || ch == '\'')
                 {
-                    refitLexemeBuffer(&lexeme);
                     return lexeme[0] == ch ? (LexItem){STRING, lexeme, *linenum} : (LexItem){ERR, lexeme, *linenum};
                 }
                 break;

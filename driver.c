@@ -93,13 +93,16 @@ int main(int argc, char** argv)
 
     if(tok.token == DONE)
     {
+        printf("%d: %s \n", tok.linenum, tok.lexeme);
         printf("Successfully Processed Lexemes \n");
+
     }
     else
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
-        free(tok.lexeme);
     }
+
+    free(tok.lexeme);
 
     fclose(inputFile);
 

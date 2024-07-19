@@ -20,7 +20,7 @@ typedef struct
 {
     Token token;
     char* lexeme;
-    int lineNum;
+    int linenum;
 } LexItem;
 
 LexItem getNextToken(FILE* input, int* linenum);
