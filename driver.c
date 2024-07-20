@@ -85,6 +85,12 @@ int main(int argc, char** argv)
     LexItem tok;
     int linenum = 1;
     printf("Starting Lexing...\n");
+
+    tok = getNextToken(inputFile, &linenum);
+
+    printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
+
+    /*
     while((tok = getNextToken(inputFile, &linenum)).token != DONE && tok.token != ERR)
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
@@ -101,6 +107,7 @@ int main(int argc, char** argv)
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
     }
+    */
 
     free(tok.lexeme);
 

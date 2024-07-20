@@ -180,6 +180,7 @@ LexItem getNextToken(FILE* input, int* linenum)
             case INCOMMENT:
                 if(ch == '\n')
                 {
+                    state = START;
                     free(lexeme);
                     lexeme = malloc(1);
                     lexeme[0] = '\0';
