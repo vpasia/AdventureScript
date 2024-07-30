@@ -6,7 +6,7 @@
 
 typedef enum 
 {
-    ITEM, SCENE, DESCRIBE,
+    ITEM = 1, SCENE, DESCRIBE,
     ASK, CHOICE, IF, ELSE,
     PLAYER, DOT, RECEIVE, HAS, 
     EFFECT, CHARACTER, STRING, 

@@ -29,6 +29,7 @@ const char* tokenToString(Token token)
         case RPAREN: return ")";
         case ARROW: return "->";
         case DONE: return "DONE";
+        case STRING: return "STRING";
         default: return "ERR";
     }
 }
@@ -85,12 +86,7 @@ int main(int argc, char** argv)
     LexItem tok;
     int linenum = 1;
     printf("Starting Lexing...\n");
-
-    tok = getNextToken(inputFile, &linenum);
-
-    printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
-
-    /*
+    
     while((tok = getNextToken(inputFile, &linenum)).token != DONE && tok.token != ERR)
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
@@ -99,16 +95,13 @@ int main(int argc, char** argv)
 
     if(tok.token == DONE)
     {
-        printf("%d: %s \n", tok.linenum, tok.lexeme);
         printf("Successfully Processed Lexemes \n");
-
     }
     else
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
     }
-    */
-
+    
     free(tok.lexeme);
 
     fclose(inputFile);

@@ -175,7 +175,6 @@ void* getItem(Map* map, const char* key)
 	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
 
 	MapEntry* currentEntry = &map->entries[index];
-	printf("%s - %s at index %zu with pointer %p\n", currentEntry->key, key, index, currentEntry);
 
 	while(currentEntry != NULL && currentEntry->key != NULL)
 	{

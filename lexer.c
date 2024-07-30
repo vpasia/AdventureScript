@@ -117,7 +117,7 @@ LexItem getNextToken(FILE* input, int* linenum)
                     state = INID;
                     continue;
                 }
-                else if(strcmp(lexeme, "'") == 0 || strcmp(lexeme,"\"") == 0)
+                else if(strcmp(lexeme,"\"") == 0)
                 {
                     state = INSTRING;
                     continue;
@@ -171,9 +171,9 @@ LexItem getNextToken(FILE* input, int* linenum)
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
                 }
 
-                if(ch == '"' || ch == '\'')
+                if(ch == '"')
                 {
-                    return lexeme[0] == ch ? (LexItem){STRING, lexeme, *linenum} : (LexItem){ERR, lexeme, *linenum};
+                    return (LexItem){STRING, lexeme, *linenum};
                 }
                 break;
             
