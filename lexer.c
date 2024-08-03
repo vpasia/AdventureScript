@@ -53,15 +53,16 @@ void freeTokenMaps()
     freeMap(delimiters);
 }
 
-bool addCharToLexeme(char** lexeme, int* lexemeIndex, char character)
+bool addCharToLexeme(Lexeme* lexeme, char character)
 {
-    if((*lexeme)[(*lexemeIndex)] == '\0')
+    if(lexeme->index == lexeme->length)
     {
-        char* tmp = realloc(*lexeme, (*lexemeIndex) + 2);
+        char* tmp = realloc(lexeme->text, lexeme->length * 2);
 
         if(tmp != NULL)
         {
-            *lexeme = tmp;
+            lexeme->text = tmp;
+            lexeme->length *= 2;
         }
         else
         {
@@ -69,8 +70,26 @@ bool addCharToLexeme(char** lexeme, int* lexemeIndex, char character)
         }
     }
 
-    (*lexeme)[(*lexemeIndex)++] = character;
-    (*lexeme)[*lexemeIndex] = '\0';
+    lexeme->text[lexeme->index++] = character;
+    lexeme->text[lexeme->index] = '\0';
+    return true;
+}
+
+bool refitLexemeBuffer(Lexeme* buffer)
+{
+    char* pos = strchr(buffer->text, '\0');
+    int end = pos ? pos - buffer->text : -1;
+
+    if(end < 0) return false;
+
+    char* tmp = malloc(end);
+    if(!tmp) return false;
+
+    strcpy(tmp, buffer->text);
+
+    free(buffer->text);
+    buffer->text = tmp;
+
     return true;
 }
 
@@ -80,10 +99,10 @@ LexItem getNextToken(FILE* input, int* linenum)
 
     TokenState state = START;
 
-    char* lexeme = malloc(1);
-    lexeme[0] = '\0';
+    Lexeme lexeme = {malloc(2), 0, 1};
 
-    int lexemeIdx = 0;
+    lexeme.text[1] = '\0';
+
     char ch;
 
     while((ch = fgetc(input)) != EOF)
@@ -91,23 +110,23 @@ LexItem getNextToken(FILE* input, int* linenum)
         switch(state)
         {
             case START:
-                if(ch == '\n' && strlen(lexeme) == 0)
+                if(ch == '\n' && strlen(lexeme.text) == 0)
                 {
                     (*linenum)++;
                     continue;
                 }
-                else if(isspace(ch) && strlen(lexeme) == 0)
+                else if(isspace(ch) && strlen(lexeme.text) == 0)
                 {
                     continue;
                 }
 
-                if(!addCharToLexeme(&lexeme, &lexemeIdx, ch))
+                if(!addCharToLexeme(&lexeme, ch))
                 {
-                    freeTokenMaps();
+                    free(lexeme.text);
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
                 }
 
-                if(strcmp(lexeme, "#") == 0)
+                if(strcmp(lexeme.text, "#") == 0)
                 {
                     state = INCOMMENT;
                     continue;
@@ -117,17 +136,23 @@ LexItem getNextToken(FILE* input, int* linenum)
                     state = INID;
                     continue;
                 }
-                else if(strcmp(lexeme,"\"") == 0)
+                else if(strcmp(lexeme.text,"\"") == 0)
                 {
                     state = INSTRING;
                     continue;
                 }
 
-                int* posDelim = (int*)getItem(delimiters, lexeme);
+                if(!refitLexemeBuffer(&lexeme))
+                {
+                    free(lexeme.text);
+                    return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
+                }
+
+                int* posDelim = (int*)getItem(delimiters, lexeme.text);
                 if(posDelim != NULL)
                 {
                     Token token = (Token)(intptr_t)posDelim;
-                    return (LexItem) {token, lexeme, *linenum};
+                    return (LexItem) {token, lexeme.text, *linenum};
                 }
 
                 break;
@@ -137,22 +162,28 @@ LexItem getNextToken(FILE* input, int* linenum)
                 {
                     ungetc(ch, input);
 
-                    int* posKeyword = (int*)getItem(keywords, lexeme);
+                    if(!refitLexemeBuffer(&lexeme))
+                    {
+                        free(lexeme.text);
+                        return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
+                    }
+
+                    int* posKeyword = (int*)getItem(keywords, lexeme.text);
 
                     if(posKeyword != NULL)
                     {
                         Token token = (Token)(intptr_t)posKeyword;
-                        return (LexItem) {token, lexeme, *linenum};
+                        return (LexItem) {token, lexeme.text, *linenum};
                     }
                     else
                     {
-                        return (LexItem){ERR, lexeme, *linenum};
+                        return (LexItem){ERR, lexeme.text, *linenum};
                     }
                 }
                 
-                if(!addCharToLexeme(&lexeme, &lexemeIdx, ch))
+                if(!addCharToLexeme(&lexeme, ch))
                 {
-                    freeTokenMaps();
+                    free(lexeme.text);
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
                 }
 
@@ -161,19 +192,28 @@ LexItem getNextToken(FILE* input, int* linenum)
             case INSTRING:
                 if(ch == '\n')
                 {
-                    freeTokenMaps();
-                    return (LexItem) {ERR, lexeme, *linenum};
+                    if(!refitLexemeBuffer(&lexeme))
+                    {
+                        free(lexeme.text);
+                        return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
+                    }
+                    return (LexItem) {ERR, lexeme.text, *linenum};
                 }
 
-                if(!addCharToLexeme(&lexeme, &lexemeIdx, ch))
+                if(!addCharToLexeme(&lexeme, ch))
                 {
-                    freeTokenMaps();
+                    free(lexeme.text);
                     return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
                 }
 
                 if(ch == '"')
                 {
-                    return (LexItem){STRING, lexeme, *linenum};
+                    if(!refitLexemeBuffer(&lexeme))
+                    {
+                        free(lexeme.text);
+                        return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
+                    }
+                    return (LexItem){STRING, lexeme.text, *linenum};
                 }
                 break;
             
@@ -181,23 +221,24 @@ LexItem getNextToken(FILE* input, int* linenum)
                 if(ch == '\n')
                 {
                     state = START;
-                    free(lexeme);
-                    lexeme = malloc(1);
-                    lexeme[0] = '\0';
+                    free(lexeme.text);
+                    lexeme.text = malloc(2);
+                    lexeme.text[1] = '\0';
 
-                    lexemeIdx = 0;
+                    lexeme.index = 0;
                     (*linenum)++;
                 }
                 break;
         }
     }
 
+    free(lexeme.text);
+    freeTokenMaps();
+
     if(feof(input))
     {
-        freeTokenMaps();
         return (LexItem){DONE, "Finished", *linenum};
     }
-
-    freeTokenMaps();
+    
     return (LexItem){ERR, "IO Error", *linenum};
 }
