@@ -23,6 +23,13 @@ typedef struct
     int linenum;
 } LexItem;
 
+typedef struct
+{
+    char* text;
+    int index;
+    size_t length;
+} Lexeme;
+
 LexItem getNextToken(FILE* input, int* linenum);
 
 #endif
