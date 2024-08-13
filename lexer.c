@@ -24,6 +24,7 @@ bool InitializeMaps()
                         && setItem(keywords, "choice", (void*)CHOICE)
                         && setItem(keywords, "if", (void*)IF)
                         && setItem(keywords, "else", (void*)ELSE)
+                        && setItem(keywords, "not", (void*)NOT)
                         && setItem(keywords, "player", (void*)PLAYER)
                         && setItem(keywords, "receive", (void*)RECEIVE)
                         && setItem(keywords, "has", (void*)HAS)
@@ -224,7 +225,7 @@ LexItem getNextToken(FILE* input, int* linenum)
                     state = START;
                     free(lexeme.text);
                     lexeme.text = malloc(2);
-                    lexeme.text[1] = '\0';
+                    lexeme.text[0] = '\0';
 
                     lexeme.index = 0;
                     lexeme.length = 2;

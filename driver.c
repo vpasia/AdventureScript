@@ -30,6 +30,7 @@ const char* tokenToString(Token token)
         case ARROW: return "->";
         case DONE: return "DONE";
         case STRING: return "STRING";
+        case NOT: return "NOT";
         default: return "ERR";
     }
 }
