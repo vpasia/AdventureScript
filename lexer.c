@@ -55,7 +55,7 @@ void freeTokenMaps()
 
 bool addCharToLexeme(Lexeme* lexeme, char character)
 {
-    if(lexeme->index == lexeme->length)
+    if(lexeme->index + 1 >= lexeme->length)
     {
         char* tmp = realloc(lexeme->text, lexeme->length * 2);
 
@@ -82,13 +82,14 @@ bool refitLexemeBuffer(Lexeme* buffer)
 
     if(end < 0) return false;
 
-    char* tmp = malloc(end);
+    char* tmp = malloc(end + 1);
     if(!tmp) return false;
 
     strcpy(tmp, buffer->text);
 
     free(buffer->text);
     buffer->text = tmp;
+    buffer->length = end + 1;
 
     return true;
 }
@@ -99,9 +100,9 @@ LexItem getNextToken(FILE* input, int* linenum)
 
     TokenState state = START;
 
-    Lexeme lexeme = {malloc(2), 0, 1};
-
-    lexeme.text[1] = '\0';
+    Lexeme lexeme = {malloc(2), 0, 2};
+    if (lexeme.text == NULL) return (LexItem){ERR, "Memory Allocation failed for Lexeme", *linenum};
+    lexeme.text[0] = '\0';
 
     char ch;
 
@@ -110,12 +111,12 @@ LexItem getNextToken(FILE* input, int* linenum)
         switch(state)
         {
             case START:
-                if(ch == '\n' && strlen(lexeme.text) == 0)
+                if(ch == '\n' && lexeme.index == 0)
                 {
                     (*linenum)++;
                     continue;
                 }
-                else if(isspace(ch) && strlen(lexeme.text) == 0)
+                else if(isspace(ch) && lexeme.index == 0)
                 {
                     continue;
                 }
@@ -226,6 +227,7 @@ LexItem getNextToken(FILE* input, int* linenum)
                     lexeme.text[1] = '\0';
 
                     lexeme.index = 0;
+                    lexeme.length = 2;
                     (*linenum)++;
                 }
                 break;
