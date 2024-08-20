@@ -31,7 +31,9 @@ bool InitializeMaps()
                         && setItem(keywords, "effect", (void*)EFFECT)
                         && setItem(keywords, "character", (void*)CHARACTER)
                         && setItem(keywords, "dialogue", (void*)DIALOGUE)
-                        && setItem(keywords, "say", (void*)SAY);
+                        && setItem(keywords, "say", (void*)SAY)
+                        && setItem(keywords, "start", (void*)START)
+                        && setItem(keywords, "end", (void*)END);
         
         if(!isAdded) return isAdded;
 

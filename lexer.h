@@ -13,7 +13,7 @@ typedef enum
     DIALOGUE, SAY, ARROW,
     LCURLY, RCURLY, 
     LPAREN, RPAREN, 
-    ERR, DONE
+    ERR, DONE, START, END
 } Token;
 
 typedef struct
