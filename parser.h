@@ -7,18 +7,18 @@
 
 #include "lexer.h"
 
-void pushBackToken(LexItem token);
+void pushBackToken(LexItem* token);
 LexItem getNextProgToken(FILE* input, int* linenum);
 
 bool Prog(FILE* input, int* linenum);
 bool Decl(FILE* input, int* linenum);
 bool ItemDecl(FILE* input, int* linenum);
 bool CharacterDecl(FILE* input, int* linenum);
-bool DialogueContent(FILE* input, int* linenum);
-bool DialogueChoice(FILE* input, int* linenum);
-bool DialogueEffect(FILE* input, int* linenum);
+bool DialogueContent(FILE* input, int* linenum, Character* character);
+bool DialogueChoice(FILE* input, int* linenum, Scene* dialogueScene);
+bool DialogueEffect(FILE* input, int* linenum, Scene* dialogueScene);
 bool SceneDefinition(FILE* input, int* linenum);
-bool SceneContent(FILE* input, int* linenum);
+bool SceneContent(FILE* input, int* linenum); 
 bool Description(FILE* input, int* linenum);
 bool IfBlock(FILE* input, int* linenum);
 bool AskBlock(FILE* input, int* linenum);
