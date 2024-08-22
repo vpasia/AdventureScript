@@ -104,7 +104,7 @@ LexItem getNextToken(FILE* input, int* linenum)
     TokenState state = START;
 
     Lexeme lexeme = {malloc(2), 0, 2};
-    if (lexeme.text == NULL) return (LexItem){ERR, "Memory Allocation failed for Lexeme", *linenum};
+    if (!lexeme.text) return (LexItem){ERR, "Memory Allocation failed for Lexeme", *linenum};
     lexeme.text[0] = '\0';
 
     char ch;
@@ -153,7 +153,7 @@ LexItem getNextToken(FILE* input, int* linenum)
                 }
 
                 int* posDelim = (int*)getItem(delimiters, lexeme.text);
-                if(posDelim != NULL)
+                if(!posDelim)
                 {
                     Token token = (Token)(intptr_t)posDelim;
                     return (LexItem) {token, lexeme.text, *linenum};
