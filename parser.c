@@ -246,8 +246,6 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
         return false;
     }
 
-    dialogueScene->description = NULL;
-
     tok = getNextProgToken(input, linenum);
     free(tok.lexeme);
 
@@ -275,7 +273,7 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
         return false;
     }
 
-    dialogueScene->prompt = tok.lexeme;
+    dialogueScene->description = tok.lexeme;
 
     tok = getNextProgToken(input, linenum);
     free(tok.lexeme);
@@ -312,7 +310,61 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
 bool AskBlock(FILE* input, int* linenum, Scene* scene)
 {
+    LexItem tok = getNextProgToken(input, linenum);
+
+    switch(tok.token)
+    {
+        case STRING:
+            scene->prompt = tok.lexeme;
+            tok = getNextProgToken(input, linenum);
+
+            if(tok.token != LCURLY)
+            {
+                ParseError("Missing { in Ask block.", linenum);
+                return false;
+            }
+
+            break;
+
+        case LCURLY:
+            free(tok.lexeme);
+            scene->prompt = malloc(strlen("What will you say?") + 1);
+            strcpy(scene->prompt, "What will you say?");
+            break;
+
+        default:
+            ParseError("Missing Prompt in scene.", linenum);
+            return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != CHOICE)
+    {
+        ParseError("Must provide at least one choice.", linenum);
+        return false;
+    }
+
+    while(tok.token == CHOICE)
+    {
+        if(!ChoiceDefinition(input, linenum, scene)) return false;
+        tok = getNextProgToken(input, linenum);
+        free(tok.lexeme);
+    }
     
+    if(tok.token != RCURLY)
+    {
+        ParseError("Missing } in Ask Block.", linenum);
+        return false;
+    }
+
+    return true;
+}
+
+bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
+{
+
 }
 
 bool SceneDefinition(FILE* input, int* linenum)
