@@ -1,7 +1,9 @@
-#include "parser.h"
-#include "map.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-#define ParseError(message, linenum) printf("%d: %s \n", linenum, message);
+#include "parser.h"
+
+#define ParseError(message, linenum) printf("%d: %s \n", *linenum, message);
 
 Map* scenes = NULL;
 Map* playerInventory = NULL;
@@ -144,8 +146,8 @@ bool ItemDecl(FILE* input, int* linenum)
 
     if(tok.token != STRING)
     {
-        ParseError("Missing Item name in Declaration.", linenum);
         free(tok.lexeme);
+        ParseError("Missing Item name in Declaration.", linenum);
         return false;
     }
 
@@ -173,8 +175,8 @@ bool CharacterDecl(FILE* input, int* linenum)
 
     if(!character)
     {
-        ParseError("Unable to allocate memory for character.", linenum);
         free(characterName);
+        ParseError("Unable to allocate memory for character.", linenum);
         return false;
     }
 
@@ -182,6 +184,8 @@ bool CharacterDecl(FILE* input, int* linenum)
 
     if(!character->dialogueScenes)
     {
+        free(characterName);
+        free(character);
         ParseError("Unable to allocate memory for character dialogue scenes.", linenum);
         return false;
     }
@@ -191,6 +195,9 @@ bool CharacterDecl(FILE* input, int* linenum)
 
     if(tok.token != LCURLY)
     {
+        free(characterName);
+        free(character);
+        
         ParseError("Missing { in Character Definition.", linenum);
         return false;
     }
@@ -200,25 +207,41 @@ bool CharacterDecl(FILE* input, int* linenum)
 
     if(tok.token != DIALOGUE)
     {
+        free(characterName);
+        free(character);
+
         ParseError("Must at least define one dialogue scene.", linenum);
         return false;
     }
 
     while(tok.token == DIALOGUE)
     {
-        if(!DialogueContent(input, linenum, character)) return false;
+        if(!DialogueContent(input, linenum, character))
+        {
+            free(characterName);
+            free(character);
+
+            return false;
+        }
+
         tok = getNextProgToken(input, linenum);
         free(tok.lexeme);
     }
 
     if(tok.token != RCURLY)
     {
+        free(characterName);
+        free(character);
+
         ParseError("Missing } in Character Definition.", linenum);
         return false;
     }
 
     if(!setItem(characters, characterName, character))
     {
+        free(characterName);
+        free(character);
+
         ParseError("Failed to add Character in defined characters.", linenum);
         return false;
     }
@@ -232,8 +255,8 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     if(tok.token != STRING) 
     {
-        ParseError("Missing Dialogue name in Dialogue definition.", linenum);
         free(tok.lexeme);
+        ParseError("Missing Dialogue name in Dialogue definition.", linenum);
         return false;
     }
 
@@ -242,6 +265,8 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     if(!dialogueScene)
     {
+        free(dialogueName);
+        free(dialogueScene);
         ParseError("Failed to allocate memory for dialogue scene.", linenum);
         return false;
     }
@@ -251,6 +276,9 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     if(tok.token != LCURLY)
     {
+        free(dialogueName);
+        free(dialogueScene);
+
         ParseError("Missing { in Dialogue definition.", linenum);
         return false;
     }
@@ -260,6 +288,9 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     if(tok.token != SAY) 
     {
+        free(dialogueName);
+        free(dialogueScene);
+
         ParseError("Missing SAY keyword in Dialogue definition.", linenum);
         return false;
     }
@@ -268,6 +299,9 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     if(tok.token != STRING)
     {
+        free(dialogueName);
+        free(dialogueScene);
+
         ParseError("Missing Character Dialogue in Dialogue definition.", linenum);
         free(tok.lexeme);
         return false;
@@ -280,12 +314,18 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     if(tok.token != ASK)
     {
+        free(dialogueName);
+        free(dialogueScene);
+
         ParseError("Missing ASK block in Dialogue definition.", linenum);
         return false;
     }
 
     if(!AskBlock(input, linenum, dialogueScene))
     {
+        free(dialogueName);
+        free(dialogueScene);
+
         ParseError("Incorrect ASK block in Dialogue definition.", linenum);
         return false;
     }
@@ -295,12 +335,18 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     if(tok.token != RCURLY)
     {
+        free(dialogueName);
+        free(dialogueScene);
+
         ParseError("Missing } in dialogue definition.", linenum);
         return false;
     }
 
     if(!setItem(character->dialogueScenes, dialogueName, dialogueScene))
     {
+        free(dialogueName);
+        free(dialogueScene);
+
         ParseError("Failed to add dialogue scene in Character's dialogue scenes.", linenum);
         return false;
     }
@@ -320,6 +366,7 @@ bool AskBlock(FILE* input, int* linenum, Scene* scene)
 
             if(tok.token != LCURLY)
             {
+                free(scene->prompt);
                 ParseError("Missing { in Ask block.", linenum);
                 return false;
             }
@@ -329,6 +376,13 @@ bool AskBlock(FILE* input, int* linenum, Scene* scene)
         case LCURLY:
             free(tok.lexeme);
             scene->prompt = malloc(strlen("What will you say?") + 1);
+
+            if(!scene->prompt)
+            {
+                ParseError("Failed to allocate memory for scene prompt.", linenum);
+                return false;
+            }
+
             strcpy(scene->prompt, "What will you say?");
             break;
 
@@ -342,19 +396,37 @@ bool AskBlock(FILE* input, int* linenum, Scene* scene)
 
     if(tok.token != CHOICE)
     {
+        free(scene->prompt);
         ParseError("Must provide at least one choice.", linenum);
         return false;
     }
 
+    scene->choices = createLinkedList();
+
+    if(!scene->choices)
+    {
+        free(scene->prompt);
+        ParseError("Failed to allocate memory for choices.", linenum);
+        return false;
+    }
+
+    scene->conditional = NULL;
+
     while(tok.token == CHOICE)
     {
-        if(!ChoiceDefinition(input, linenum, scene)) return false;
+        if(!ChoiceDefinition(input, linenum, scene)) 
+        {
+            free(scene->prompt);
+            return false;
+        }
+
         tok = getNextProgToken(input, linenum);
         free(tok.lexeme);
     }
     
     if(tok.token != RCURLY)
     {
+        free(scene->prompt);
         ParseError("Missing } in Ask Block.", linenum);
         return false;
     }
@@ -363,6 +435,197 @@ bool AskBlock(FILE* input, int* linenum, Scene* scene)
 }
 
 bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
+{
+    bool status = false;
+    LexItem tok = getNextProgToken(input, linenum);
+
+    if(tok.token != STRING)
+    {
+        free(tok.lexeme);
+        ParseError("Missing choice description in Choice.", linenum);
+        return status;
+    }
+
+    Choice* choice = malloc(sizeof(Choice));
+
+    if(!choice)
+    {
+        ParseError("Failed to allocate memory for Choice.", linenum);
+        return false;
+    }
+
+    choice->choiceDescription = tok.lexeme;
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != ARROW)
+    {
+        free(choice->choiceDescription);
+        free(choice);
+
+        ParseError("Missing -> in Choice.", linenum);
+        return status;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    switch(tok.token)
+    {
+        case EFFECT:
+            status = EffectDefinition(input, linenum, scene, choice);
+            break;
+        case IF:
+            status = IfBlock(input, linenum, scene, choice);
+            break;
+        default:
+            ParseError("Must have an effect for choice.", linenum);
+            return false;
+    }
+
+    bool inserted = true;
+    if(!status || !(status = inserted = insertEnd(scene->choices, choice))) 
+    {
+        if(!inserted) ParseError("Failed to insert choice in scene's choices.", linenum);
+        free(choice->choiceDescription);
+        free(choice);
+    }
+    return status;
+}
+
+bool IfBlock(FILE* input, int* linenum, Scene* scene, Choice* choice)
+{
+    LexItem tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != PLAYER)
+    {
+        ParseError("Missing reference to player in If.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != DOT)
+    {
+        ParseError("Missing '.' directive after player in If.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != DOT)
+    {
+        ParseError("Missing '.' directive after player in If.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != HAS)
+    {
+        ParseError("Missing 'has' function call after player in If.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+
+    if(tok.token != STRING)
+    {
+        free(tok.lexeme);
+        ParseError("Missing item name for conditional in If.", linenum);
+        return false;
+    }
+
+    choice->conditional = tok.lexeme;
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != LCURLY)
+    {
+        free(choice->conditional);
+        ParseError("Missing { in If.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != EFFECT)
+    {
+        free(choice->conditional);
+        ParseError("Must have an effect for if condition.", linenum);
+        return false;
+    } 
+
+    if(!EffectDefinition(input, linenum, scene, choice))
+    {
+        free(choice->conditional);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != RCURLY)
+    {
+        free(choice->conditional);
+        ParseError("Missing } in If.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != ELSE)
+    {
+        free(choice->conditional);
+        ParseError("Missing else in If block.", linenum);
+        return false;
+    }
+
+    if(tok.token != LCURLY)
+    {
+        free(choice->conditional);
+        ParseError("Missing { in else.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != EFFECT)
+    {
+        free(choice->conditional);
+        ParseError("Must have an effect for else condition.", linenum);
+        return false;
+    } 
+
+    if(!EffectDefinition(input, linenum, scene, choice))
+    {
+        free(choice->conditional);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != RCURLY)
+    {
+        free(choice->conditional);
+        ParseError("Missing } in else.", linenum);
+        return false;
+    }
+
+
+}
+
+bool EffectDefinition(FILE* input, int* linenum, Scene* scene, Choice* choice)
 {
 
 }

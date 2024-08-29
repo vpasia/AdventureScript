@@ -1,6 +1,10 @@
-#include "map.h"
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
+
+#include "map.h"
 
 
 static uint64_t hash_key(const char* key)

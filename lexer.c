@@ -1,9 +1,9 @@
+#include <stdbool.h>
+#include <ctype.h>
+#include <string.h>
+
 #include "lexer.h"
 #include "map.h"
-
-#include <ctype.h>
-#include <stdbool.h>
-#include <string.h>
 
 typedef enum { START, INID, INSTRING, INCOMMENT } TokenState;
 
