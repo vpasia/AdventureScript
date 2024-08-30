@@ -24,10 +24,10 @@ bool DialogueContent(FILE* input, int* linenum, Character* character);
 bool SceneDefinition(FILE* input, int* linenum);
 bool SceneContent(FILE* input, int* linenum); 
 bool Description(FILE* input, int* linenum);
-bool IfBlock(FILE* input, int* linenum, Scene* scene, Choice* choice);
+bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional);
 bool AskBlock(FILE* input, int* linenum, Scene* scene);
 bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene);
-bool EffectDefinition(FILE* input, int* linenum, Scene* scene, Choice* choice);
+bool EffectDefinition(FILE* input, int* linenum, Effect* effect);
 bool EntryPoint(FILE* input, int* linenum);
 
 typedef struct
@@ -35,30 +35,28 @@ typedef struct
     char* description;
     char* prompt;
     LinkedList* choices;
-    ConditionalStmt* conditional;
+    ConditionalStmt conditional;
 } Scene;
 
 typedef struct
 {
     char* choiceDescription;
-    Effect* effect;
-    ConditionalStmt* conditional;
+    Effect effect;
+    ConditionalStmt conditional;
 } Choice;
 
 typedef enum {SC, IT, CH} EffectType;
-
-typedef union 
-{
-    char* scene;
-    char* item;
-    char* character;
-} EffectAction;
 
 typedef struct
 {
     char* effectDescription;
     EffectType type;
-    EffectAction action;
+    union 
+    {
+        char* scene;
+        char* item;
+        char* character;
+    } action;
 } Effect;
 
 typedef struct
@@ -68,10 +66,9 @@ typedef struct
 
 typedef struct
 {
-    Effect* ifEffect;
-    Effect* elseEffect;
+    Effect ifEffect;
+    Effect elseEffect;
     char* itemCondition;
-    bool not;
 } ConditionalStmt;
 
 #endif
