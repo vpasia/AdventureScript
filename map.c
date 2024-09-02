@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "map.h"
-
+/*TODO: Fix freeMap implementation to include pointer to custom free function for values*/
 
 static uint64_t hash_key(const char* key)
 {
@@ -45,7 +45,7 @@ Map* createMap()
 
 	if(m->entries == NULL)
 	{
-		freeMap(m);
+		freeMap(m, free);
 		return NULL;
 	}
 
@@ -59,7 +59,7 @@ Map* createMap()
 	return m;
 }
 
-void freeMap(Map* map)
+void freeMap(Map* map, void (*freeValue)(void*))
 {
 	int i;
 	for(i = 0; i < map->capacity; i++)
@@ -72,7 +72,7 @@ void freeMap(Map* map)
 			previousEntry = currentEntry;
 			currentEntry = currentEntry->next;
 			free(previousEntry->key);
-			free(previousEntry->value);
+			(*freeValue)(previousEntry->value);
 			free(previousEntry);
 		}
 	}

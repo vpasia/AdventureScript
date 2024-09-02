@@ -17,8 +17,8 @@ typedef struct LinkedList
 
 LinkedList* createLinkedList();
 
-void freeLinkedList(LinkedList* list);
+void freeLinkedList(LinkedList* list, void (*freeValue)(void*));
 bool insertEnd(LinkedList* list, void* value);
-bool removeListItem(LinkedList* list, void* value, int (*comparator)(void*, void*));
+bool removeListItem(LinkedList* list, void* value, int (*comparator)(void*, void*), void (*freeValue)(void*));
 
 #endif

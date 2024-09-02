@@ -16,7 +16,7 @@ LinkedList* createLinkedList()
 	return list;
 }
 
-void freeLinkedList(LinkedList* list)
+void freeLinkedList(LinkedList* list, void (*freeValue)(void*))
 {
 	Node* previous = list->head;
 	Node* current = previous;
@@ -26,7 +26,7 @@ void freeLinkedList(LinkedList* list)
 		previous = current;
 		current = current->next;
 
-		free(previous->value);
+		(*freeValue)(previous->value);
 		free(previous);
 	}
 
@@ -61,7 +61,7 @@ bool insertEnd(LinkedList* list, void* value)
 	return true;
 }
 
-bool removeListItem(LinkedList* list, void* value, int (*comparator)(void*, void*))
+bool removeListItem(LinkedList* list, void* value, int (*comparator)(void*, void*), void (*freeValue)(void*))
 {
 	Node* previous = list->head;
 	Node* current = previous;
@@ -69,7 +69,7 @@ bool removeListItem(LinkedList* list, void* value, int (*comparator)(void*, void
 	if(previous && (*comparator)(previous->value, value) == 0)
 	{
 		list->head = previous->next;
-		free(previous->value);
+		(*freeValue)(previous->value);
 		free(previous);
 
 		return true;
@@ -87,7 +87,7 @@ bool removeListItem(LinkedList* list, void* value, int (*comparator)(void*, void
 
 	if(current == list->tail) list->tail = previous;
 
-	free(current->value);
+	(*freeValue)(current->value);
 	free(current);
 
 	return true;

@@ -20,7 +20,7 @@ typedef struct
 } Map;
 
 Map* createMap();
-void freeMap(Map* map);
+void freeMap(Map* map, void (*freeValue)(void*));
 
 bool setItem(Map* map, const char* key, void* value);
 void* getItem(Map* map, const char* key);
