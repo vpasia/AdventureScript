@@ -55,7 +55,7 @@ typedef struct
     {
         char* scene;
         char* item;
-        char* character;
+        char* character[2];
     } action;
 } Effect;
 

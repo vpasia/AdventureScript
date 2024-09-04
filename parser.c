@@ -42,14 +42,27 @@ void FreeEffect(Effect* effect)
     switch(effect->type)
     {
         case SC:
+        {
             free(effect->action.scene);
             break;
+        }
+            
         case IT:
+        {
             free(effect->action.item);
             break;
+        }
+
         case CH:
-            free(effect->action.character);
+        {
+            int i;
+            for(i = 0; i < sizeof effect->action.character / sizeof effect->action.character[0]; i++)
+            {
+                free(effect->action.character[i]);
+            }
             break;
+        }
+            
     }
 }
 
@@ -708,11 +721,10 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
     tok = getNextProgToken(input, linenum);
     free(tok.lexeme);
 
-    /* TODO: Finish effect definition*/
-
     switch(tok.token)
     {
         case SCENE:
+        {
             effect->type = SC;
             tok = getNextProgToken(input, linenum);
 
@@ -723,8 +735,21 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 return false;
             }
 
+            int* posScene = getItem(scenes, tok.lexeme);
+
+            if(!posScene)
+            {
+                ParseError("Scene to transfer to hasn't been defined.", linenum);
+                return false;
+            }
+
+            effect->action.scene = tok.lexeme;
+
             break;
+        }
+            
         case ITEM:
+        {
             effect->type = IT;
             tok = getNextProgToken(input, linenum);
 
@@ -735,8 +760,21 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 return false;
             }
 
+            int* posItem = getItem(items, tok.lexeme);
+
+            if(!posItem)
+            {
+                ParseError("Item to be received hasn't been declared.", linenum);
+                return false;
+            }
+
+            effect->action.item = tok.lexeme;
+
             break;
+        }
+            
         case DIALOGUE:
+        {
             effect->type = CH;
             tok = getNextProgToken(input, linenum);
 
@@ -747,7 +785,50 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 return false;
             }
 
+            char chArgs[strlen(tok.lexeme)];
+            strcpy(chArgs, tok.lexeme);
+
+            free(tok.lexeme);
+
+            char* tokenizedArgs = strtok(chArgs, ".");
+
+            if(strcmp(tokenizedArgs, tok.lexeme) == 0)
+            {
+                ParseError("Invalid argument for dialogue effect. [Must be in form \"Character.Dialogue\"]", linenum);
+                return false;
+            }
+
+            char* characterName, dialogueName;
+
+            while(tokenizedArgs)
+            {
+                !characterName ? (characterName = tokenizedArgs) : (dialogueName = tokenizedArgs);
+                tokenizedArgs = strtok(NULL, ".");
+            }
+
+            void* posCharacter = getItem(characters, characterName);
+            if(!posCharacter)
+            {
+                ParseError("Character specified does not exist.", linenum);
+                return false;
+            }
+
+            Character* character = (Character*)posCharacter;
+
+            void* posDialogue = getItem(character->dialogueScenes, dialogueName);
+
+            if(!posDialogue)
+            {
+                ParseError("Character dialogue specified does not exist.", linenum);
+                return false;
+            }
+
+            effect->action.character[0] = characterName;
+            effect->action.character[1] = dialogueName;
+
             break;
+        }
+            
         default:
             ParseError("Effect must transition to next scene/dialogue or give player an item.", linenum);
             return false;
