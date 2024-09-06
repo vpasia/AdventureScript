@@ -839,5 +839,31 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
 bool SceneDefinition(FILE* input, int* linenum)
 {
+    LexItem tok = getNextProgToken(input, linenum);
 
+    if(tok.token != STRING)
+    {
+        free(tok.lexeme);
+        ParseError("Missing name for scene.", linenum);
+        return false;
+    }
+
+    char* sceneName = tok.lexeme;
+    Scene* scene = malloc(sizeof(Scene));
+
+    if(!scene)
+    {
+        free(sceneName);
+        ParseError("Failed to allocate memory for scene.", linenum);
+        return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != LCURLY)
+    {
+        ParseError("Missing { in Scene definition.", linenum);
+        return false;
+    }
 }
