@@ -830,6 +830,9 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             break;
         }
+
+	case END:
+	    effect->end = true;
             
         default:
             ParseError("Effect must transition to next scene/dialogue or give player an item.", linenum);
@@ -856,6 +859,7 @@ bool SceneDefinition(FILE* input, int* linenum)
     if(!scene)
     {
         free(sceneName);
+	free(scene);
         ParseError("Failed to allocate memory for scene.", linenum);
         return false;
     }
@@ -865,6 +869,8 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     if(tok.token != LCURLY)
     {
+	free(sceneName);
+	free(scene);
         ParseError("Missing { in Scene definition.", linenum);
         return false;
     }
@@ -874,6 +880,8 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     if(tok.token != DESCRIBE)
     {
+	free(sceneName);
+	free(scene);
 	ParseError("Missing describe keyword in Scene definition", linenum);
 	return false;
     }
@@ -883,6 +891,7 @@ bool SceneDefinition(FILE* input, int* linenum)
     if(tok.token != STRING)
     {
 	free(tok.lexeme);
+	free(sceneName);
 	ParseError("Missing description for scene in Scene definition.", linenum);
 	return false;
     }
@@ -898,12 +907,20 @@ bool SceneDefinition(FILE* input, int* linenum)
     {
 	case IF:
 	    status = IfBlock(input, linenum, &scene->conditional);
-	    if(!status) return status;
+	    if(!status)
+	    {
+		free(sceneName);
+		return status;
+	    } 
 	    break;
 
 	case ASK:
 	    status = AskBlock(input, linenum, scene);
-	    if(!status) return status;
+	    if(!status)
+	    {
+		free(sceneName);
+		return status;
+	    } 
 	    break;
 	
 	default:
@@ -916,12 +933,14 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     if(tok.token != RCURLY)
     {
+	free(sceneName);
 	ParseError("Missing } in Scene definition.", linenum);
 	return false;
     }
 
     if(!setItem(scenes, sceneName, scene))
     {
+	free(sceneName);
 	ParseError("Failed to add scene into map.", linenum);
 	return false;
     }

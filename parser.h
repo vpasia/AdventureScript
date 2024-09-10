@@ -54,6 +54,7 @@ typedef struct
         char* item;
         char* character[2];
     } action;
+    bool end;
 } Effect;
 
 typedef struct
