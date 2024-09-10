@@ -52,8 +52,8 @@ bool InitializeMaps()
 
 void freeTokenMaps()
 {
-    freeMap(keywords);
-    freeMap(delimiters);
+    freeMap(keywords, free);
+    freeMap(delimiters, free);
 }
 
 bool addCharToLexeme(Lexeme* lexeme, char character)
