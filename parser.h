@@ -26,7 +26,6 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional);
 bool AskBlock(FILE* input, int* linenum, Scene* scene);
 bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene);
 bool EffectDefinition(FILE* input, int* linenum, Effect* effect);
-bool EntryPoint(FILE* input, int* linenum);
 
 typedef struct
 {

@@ -705,6 +705,8 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
     }
 }
 
+
+/* Modify implementation to account for marking which scene is the end */
 bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 {
     LexItem tok = getNextProgToken(input, linenum);
