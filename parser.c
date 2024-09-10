@@ -866,4 +866,73 @@ bool SceneDefinition(FILE* input, int* linenum)
         ParseError("Missing { in Scene definition.", linenum);
         return false;
     }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != DESCRIBE)
+    {
+	ParseError("Missing describe keyword in Scene definition", linenum);
+	return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    
+    if(tok.token != STRING)
+    {
+	free(tok.lexeme);
+	ParseError("Missing description for scene in Scene definition.", linenum);
+	return false;
+    }
+
+    scene->description = tok.lexeme;
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    bool status = false;
+
+    switch(tok.token)
+    {
+	case IF:
+	    status = IfBlock(input, linenum, &scene->conditional);
+	    if(!status) return status;
+	    break;
+
+	case ASK:
+	    status = AskBlock(input, linenum, scene);
+	    if(!status) return status;
+	    break;
+	
+	default:
+	    ParseError("Must have a conditional statement or an ask prompt in Scene definition.", linenum);
+	    return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
+
+    if(tok.token != RCURLY)
+    {
+	ParseError("Missing } in Scene definition.", linenum);
+	return false;
+    }
+
+    if(!setItem(scenes, sceneName, scene))
+    {
+	ParseError("Failed to add scene into map.", linenum);
+	return false;
+    }
+
+    tok = getNextProgToken(input, linenum);
+
+    if(tok.token == SCENE)
+    {
+	return SceneDefinition(input, linenum);
+    }
+    else
+    {
+	pushBackToken(tok);
+	return status;
+    }
 }

@@ -22,8 +22,6 @@ bool ItemDecl(FILE* input, int* linenum);
 bool CharacterDecl(FILE* input, int* linenum);
 bool DialogueContent(FILE* input, int* linenum, Character* character);
 bool SceneDefinition(FILE* input, int* linenum);
-bool SceneContent(FILE* input, int* linenum); 
-bool Description(FILE* input, int* linenum);
 bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional);
 bool AskBlock(FILE* input, int* linenum, Scene* scene);
 bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene);
