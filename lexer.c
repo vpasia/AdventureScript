@@ -5,7 +5,7 @@
 #include "lexer.h"
 #include "map.h"
 
-typedef enum { START, INID, INSTRING, INCOMMENT } TokenState;
+typedef enum { SSTART, INID, INSTRING, INCOMMENT } TokenState;
 
 Map* keywords = NULL;
 Map* delimiters = NULL;
@@ -101,7 +101,7 @@ LexItem getNextToken(FILE* input, int* linenum)
 {
     if(!InitializeMaps()) return (LexItem){ERR, "Failed To Initialize Token Maps.", *linenum};
 
-    TokenState state = START;
+    TokenState state = SSTART;
 
     Lexeme lexeme = {malloc(2), 0, 2};
     if (!lexeme.text) return (LexItem){ERR, "Memory Allocation failed for Lexeme", *linenum};
@@ -113,7 +113,7 @@ LexItem getNextToken(FILE* input, int* linenum)
     {
         switch(state)
         {
-            case START:
+            case SSTART:
                 if(ch == '\n' && lexeme.index == 0)
                 {
                     (*linenum)++;
@@ -224,7 +224,7 @@ LexItem getNextToken(FILE* input, int* linenum)
             case INCOMMENT:
                 if(ch == '\n')
                 {
-                    state = START;
+                    state = SSTART;
                     free(lexeme.text);
                     lexeme.text = malloc(2);
                     lexeme.text[0] = '\0';

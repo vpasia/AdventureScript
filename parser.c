@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "parser.h"
 
@@ -27,8 +28,8 @@ void pushBackToken(LexItem* token)
 {
     if(pushedBack)
     {
-        exit(1);
-    }
+        abort();
+    }   
     pushedBack = true;
     pushedBackToken = *token;
 }
@@ -83,7 +84,7 @@ void FreeScene(Scene* scene)
 {
     free(scene->prompt);
     free(scene->description);
-    scene->choices ? freeLinkedList(scene->choices, free) : FreeConditionalStmt(&scene->conditional);
+    scene->choices ? freeLinkedList(scene->choices, (void (*)(void*))FreeChoice) : FreeConditionalStmt(&scene->conditional);
     free(scene);
 }
 
@@ -124,7 +125,7 @@ bool Prog(FILE* input, int* linenum)
     if(tok.token == ERR)
     {
         char buffer[27 + strlen(tok.lexeme)];
-        sprintf(&buffer, "Unrecognized Input Pattern %s", tok.lexeme);
+        sprintf(buffer, "Unrecognized Input Pattern %s", tok.lexeme);
         free(tok.lexeme);
 
         ParseError(buffer, linenum);
@@ -155,6 +156,7 @@ bool Prog(FILE* input, int* linenum)
     }
 
     tok = getNextProgToken(input, linenum);
+    free(tok.lexeme);
 
     if(tok.token != START)
     {
@@ -163,8 +165,15 @@ bool Prog(FILE* input, int* linenum)
         return false;
     }
 
-    free(tok.lexeme);
+    
     tok = getNextProgToken(input, linenum);
+
+    if(tok.token != STRING)
+    {
+        ParseError("Must provide starting scene", linenum);
+        FreeUtilMaps();
+        return false;
+    }
 
     /* TODO: Segway into game simulator */
 
@@ -211,7 +220,7 @@ bool ItemDecl(FILE* input, int* linenum)
         return false;
     }
 
-    if(!setItem(items, tok.lexeme, true))
+    if(!setItem(items, tok.lexeme, (void*)true))
     {
         free(tok.lexeme);
         ParseError("Failed to add Item in declared items.", linenum);
@@ -247,7 +256,6 @@ bool CharacterDecl(FILE* input, int* linenum)
     if(!character->dialogueScenes)
     {
         free(characterName);
-        freeMap(character->dialogueScenes, (void (*)(void*))FreeScene);
         free(character);
 
         ParseError("Unable to allocate memory for character dialogue scenes.", linenum);
@@ -260,8 +268,7 @@ bool CharacterDecl(FILE* input, int* linenum)
     if(tok.token != LCURLY)
     {
         free(characterName);
-        freeMap(character->dialogueScenes, (void (*)(void*))FreeScene);
-        free(character);
+        FreeCharacter(character);
         
         ParseError("Missing { in Character Definition.", linenum);
         return false;
@@ -273,8 +280,7 @@ bool CharacterDecl(FILE* input, int* linenum)
     if(tok.token != DIALOGUE)
     {
         free(characterName);
-        freeMap(character->dialogueScenes, (void (*)(void*))FreeScene);
-        free(character);
+        FreeCharacter(character);
 
         ParseError("Must at least define one dialogue scene.", linenum);
         return false;
@@ -285,8 +291,7 @@ bool CharacterDecl(FILE* input, int* linenum)
         if(!DialogueContent(input, linenum, character))
         {
             free(characterName);
-            freeMap(character->dialogueScenes, (void (*)(void*))FreeScene);
-            free(character);
+            FreeCharacter(character);
 
             return false;
         }
@@ -298,8 +303,7 @@ bool CharacterDecl(FILE* input, int* linenum)
     if(tok.token != RCURLY)
     {
         free(characterName);
-        freeMap(character->dialogueScenes, (void (*)(void*))FreeScene);
-        free(character);
+        FreeCharacter(character);
 
         ParseError("Missing } in Character Definition.", linenum);
         return false;
@@ -308,8 +312,7 @@ bool CharacterDecl(FILE* input, int* linenum)
     if(!setItem(characters, characterName, character))
     {
         free(characterName);
-        freeMap(character->dialogueScenes, (void (*)(void*))FreeScene);
-        free(character);
+        FreeCharacter(character);
 
         ParseError("Failed to add Character in defined characters.", linenum);
         return false;
@@ -335,7 +338,6 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
     if(!dialogueScene)
     {
         free(dialogueName);
-        free(dialogueScene);
 
         ParseError("Failed to allocate memory for dialogue scene.", linenum);
         return false;
@@ -522,7 +524,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
         return status;
     }
 
-    Choice* choice = malloc(sizeof(Choice));
+    Choice* choice = malloc(sizeof choice);
 
     if(!choice)
     {
@@ -699,7 +701,7 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
 
     if(tok.token != RCURLY)
     {
-        FreeConditionalStmt(&conditional);
+        FreeConditionalStmt(conditional);
         ParseError("Missing } in else.", linenum);
         return false;
     }
@@ -733,6 +735,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
             if(tok.token != STRING)
             {
                 free(tok.lexeme);
+                free(effect->effectDescription);
                 ParseError("Must provide argument for scene transition effect.", linenum);
                 return false;
             }
@@ -741,6 +744,8 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             if(!posScene)
             {
+                free(tok.lexeme);
+                free(effect->effectDescription);
                 ParseError("Scene to transfer to hasn't been defined.", linenum);
                 return false;
             }
@@ -758,6 +763,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
             if(tok.token != STRING)
             {
                 free(tok.lexeme);
+                free(effect->effectDescription);
                 ParseError("Must provide item name for item receive effect.", linenum);
                 return false;
             }
@@ -766,6 +772,8 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             if(!posItem)
             {
+                free(tok.lexeme);
+                free(effect->effectDescription);
                 ParseError("Item to be received hasn't been declared.", linenum);
                 return false;
             }
@@ -783,6 +791,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
             if(tok.token != STRING)
             {
                 free(tok.lexeme);
+                free(effect->effectDescription);
                 ParseError("Must provide argument for dialogue transition effect.", linenum);
                 return false;
             }
@@ -790,27 +799,38 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
             char chArgs[strlen(tok.lexeme)];
             strcpy(chArgs, tok.lexeme);
 
-            free(tok.lexeme);
-
             char* tokenizedArgs = strtok(chArgs, ".");
 
             if(strcmp(tokenizedArgs, tok.lexeme) == 0)
             {
                 ParseError("Invalid argument for dialogue effect. [Must be in form \"Character.Dialogue\"]", linenum);
+                free(tok.lexeme);
                 return false;
             }
 
-            char* characterName, dialogueName;
+            free(tok.lexeme);
+
+            char *characterName = tokenizedArgs, *dialogueName;
 
             while(tokenizedArgs)
             {
-                !characterName ? (characterName = tokenizedArgs) : (dialogueName = tokenizedArgs);
+                if(!dialogueName)
+                {
+                    dialogueName = tokenizedArgs;
+                }
+                else
+                {
+                    ParseError("Invalid argument for dialogue effect. [Must be in form \"Character.Dialogue\"]", linenum);
+                    return false;
+                }
+
                 tokenizedArgs = strtok(NULL, ".");
             }
 
             void* posCharacter = getItem(characters, characterName);
             if(!posCharacter)
             {
+                free(effect->effectDescription);
                 ParseError("Character specified does not exist.", linenum);
                 return false;
             }
@@ -821,6 +841,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             if(!posDialogue)
             {
+                free(effect->effectDescription);
                 ParseError("Character dialogue specified does not exist.", linenum);
                 return false;
             }
@@ -831,15 +852,14 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
             break;
         }
 
-	case END:
-	    effect->end = true;
+        case END:
+            effect->end = true;
             
         default:
+            free(effect->effectDescription);
             ParseError("Effect must transition to next scene/dialogue or give player an item.", linenum);
             return false;
     }
-
-    
 }
 
 bool SceneDefinition(FILE* input, int* linenum)
@@ -854,12 +874,12 @@ bool SceneDefinition(FILE* input, int* linenum)
     }
 
     char* sceneName = tok.lexeme;
-    Scene* scene = malloc(sizeof(Scene));
+    Scene* scene = malloc(sizeof scene);
 
     if(!scene)
     {
         free(sceneName);
-	free(scene);
+        free(scene);
         ParseError("Failed to allocate memory for scene.", linenum);
         return false;
     }
@@ -869,8 +889,8 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     if(tok.token != LCURLY)
     {
-	free(sceneName);
-	free(scene);
+        free(sceneName);
+        free(scene);
         ParseError("Missing { in Scene definition.", linenum);
         return false;
     }
@@ -880,20 +900,20 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     if(tok.token != DESCRIBE)
     {
-	free(sceneName);
-	free(scene);
-	ParseError("Missing describe keyword in Scene definition", linenum);
-	return false;
+        free(sceneName);
+        free(scene);
+        ParseError("Missing describe keyword in Scene definition", linenum);
+        return false;
     }
 
     tok = getNextProgToken(input, linenum);
     
     if(tok.token != STRING)
     {
-	free(tok.lexeme);
-	free(sceneName);
-	ParseError("Missing description for scene in Scene definition.", linenum);
-	return false;
+        free(tok.lexeme);
+        free(sceneName);
+        ParseError("Missing description for scene in Scene definition.", linenum);
+        return false;
     }
 
     scene->description = tok.lexeme;
@@ -905,27 +925,29 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     switch(tok.token)
     {
-	case IF:
-	    status = IfBlock(input, linenum, &scene->conditional);
-	    if(!status)
-	    {
-		free(sceneName);
-		return status;
-	    } 
-	    break;
+        case IF:
+            status = IfBlock(input, linenum, &scene->conditional);
+            if(!status)
+            {
+                free(sceneName);
+                free(scene->description);
+                return status;
+            } 
+            break;
 
-	case ASK:
-	    status = AskBlock(input, linenum, scene);
-	    if(!status)
-	    {
-		free(sceneName);
-		return status;
-	    } 
-	    break;
-	
-	default:
-	    ParseError("Must have a conditional statement or an ask prompt in Scene definition.", linenum);
-	    return false;
+        case ASK:
+            status = AskBlock(input, linenum, scene);
+            if(!status)
+            {
+                free(sceneName);
+                free(scene->description);
+                return status;
+            } 
+            break;
+        
+        default:
+            ParseError("Must have a conditional statement or an ask prompt in Scene definition.", linenum);
+            return false;
     }
 
     tok = getNextProgToken(input, linenum);
@@ -933,27 +955,30 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     if(tok.token != RCURLY)
     {
-	free(sceneName);
-	ParseError("Missing } in Scene definition.", linenum);
-	return false;
+        free(sceneName);
+        FreeScene(scene);
+        ParseError("Missing } in Scene definition.", linenum);
+        return false;
     }
 
     if(!setItem(scenes, sceneName, scene))
     {
-	free(sceneName);
-	ParseError("Failed to add scene into map.", linenum);
-	return false;
+        free(sceneName);
+        FreeScene(scene);
+        ParseError("Failed to add scene into map.", linenum);
+        return false;
     }
 
     tok = getNextProgToken(input, linenum);
 
     if(tok.token == SCENE)
     {
-	return SceneDefinition(input, linenum);
+        free(tok.lexeme);
+        return SceneDefinition(input, linenum);
     }
     else
     {
-	pushBackToken(tok);
-	return status;
+        pushBackToken(&tok);
+        return status;
     }
 }

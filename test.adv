@@ -1,56 +1,36 @@
-# Define items
-item "Sword"
-item "Shield"
+item "Magic Key"
 
-# Define characters
 character "Guardian" {
-    dialogue {
-        say "Welcome, brave warrior. Do you wish to enter the castle?"
+    dialogue "PassQuery" {
+        say "Do you wish to pass?"
         ask {
-            choice "Yes" -> effect "The guardian opens the castle gate."
-            choice "No" -> effect "The guardian nods and steps aside."
+            choice "Yes" -> effect "The Guardian steps aside." scene "Castle Gate"
+            choice "No" -> effect "The Guardian shakes his head and waits silently." scene "Start"
         }
     }
 }
 
-# Define scenes
 scene "Start" {
-    describe "You find yourself at the edge of a dense forest, with a path leading towards a distant castle."
-    
+    describe "You stand at the edge of a dark forest."
     ask "What will you do?" {
-        choice "Head to the castle" -> scene "Castle Gate"
-        choice "Enter the forest" -> scene "Forest Path"
-    }
-}
-
-scene "Castle Gate" {
-    describe "You stand before the grand gate of the castle. A guardian stands watch."
-
-    ask "Do you approach the guardian?" {
-        choice "Yes" -> dialogue "Guardian"
-        choice "No" -> effect "You decide to explore the surroundings."
+        choice "Enter the forest" -> effect "You step cautiously into the forest." scene "Forest Path"
+        choice "Talk to the Guardian" -> effect "You approach the Guardian." dialogue "Guardian.PassQuery"
+        choice "Turn back" -> effect "You decide to return home. The End." end
     }
 }
 
 scene "Forest Path" {
-    describe "The forest is dark and quiet. You hear rustling in the bushes."
-
-    ask "Do you investigate the sound?" {
-        choice "Yes" -> if player.has("Sword") {
-            effect "You draw your sword and approach the sound."
-            scene "Forest Clearing"
-        } else {
-            effect "You feel vulnerable without a weapon and decide to head back."
-        }
-        choice "No" -> scene "Start"
+    describe "The forest is quiet and unnerving."
+    ask "Do you continue?" {
+        choice "Yes" -> effect "You find a Magic Key." item "Magic Key"
+        choice "No" -> effect "You retrace your steps back to safety." scene "Start"
     }
 }
 
-scene "Forest Clearing" {
-    describe "You discover a hidden clearing with a mysterious altar in the center."
-
-    ask "Do you approach the altar?" {
-        choice "Yes" -> effect "A bright light envelops you, and you feel a surge of power."
-        choice "No" -> effect "You decide it's too dangerous and head back."
+scene "Castle Gate" {
+    describe "You stand before the imposing castle gates."
+    ask "Do you use the key?" {
+        choice "Yes" -> effect "The gates creak open, and you step inside." end
+        choice "No" -> effect "You decide to leave the castle gates behind." scene "Start"
     }
 }
