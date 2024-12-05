@@ -56,6 +56,22 @@ void freeTokenMaps()
     freeMap(delimiters, free);
 }
 
+char* substring(char* str, int start, int end)
+{
+    int len = end - start;
+    char* substr = malloc(len + 1);
+
+    int i;
+    for(i = 0; i < len; i++)
+    {
+        substr[i] = str[start + i];
+    }
+
+    substr[len] = '\0';
+
+    return substr;
+}
+
 bool addCharToLexeme(Lexeme* lexeme, char character)
 {
     if(lexeme->index + 1 >= lexeme->length)
@@ -153,10 +169,15 @@ LexItem getNextToken(FILE* input, int* linenum)
                 }
 
                 int* posDelim = (int*)getItem(delimiters, lexeme.text);
-                if(!posDelim)
+
+                if(posDelim)
                 {
                     Token token = (Token)(intptr_t)posDelim;
                     return (LexItem) {token, lexeme.text, *linenum};
+                }
+                else if(lexeme.index > 1)
+                {
+                    return (LexItem) {ERR, lexeme.text, *linenum};
                 }
 
                 break;
@@ -196,11 +217,6 @@ LexItem getNextToken(FILE* input, int* linenum)
             case INSTRING:
                 if(ch == '\n')
                 {
-                    if(!refitLexemeBuffer(&lexeme))
-                    {
-                        free(lexeme.text);
-                        return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
-                    }
                     return (LexItem) {ERR, lexeme.text, *linenum};
                 }
 
@@ -212,12 +228,10 @@ LexItem getNextToken(FILE* input, int* linenum)
 
                 if(ch == '"')
                 {
-                    if(!refitLexemeBuffer(&lexeme))
-                    {
-                        free(lexeme.text);
-                        return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
-                    }
-                    return (LexItem){STRING, lexeme.text, *linenum};
+                    char* actualString = substring(lexeme.text, 1, lexeme.index - 1);
+                    free(lexeme.text);
+
+                    return (LexItem){STRING, actualString, *linenum};
                 }
                 break;
             

@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 #include "lexer.h"
-#include "map.h"
 #include "linkedlist.h"
+#include "map.h"
 
 typedef enum {SC, IT, CH} EffectType;
 

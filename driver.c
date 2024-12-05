@@ -1,8 +1,8 @@
-#include "parser.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "parser.h"
 
 const char* tokenToString(Token token) 
 {
@@ -48,11 +48,8 @@ int main(int argc, char** argv)
     if(strcmp(fileExtension, ".adv") != 0)
     {
         printf("INVALID PROGRAM FILE INPUTTED. \n");
-        free(fileExtension);
         exit(1);
     }
-
-    free(fileExtension);
 
     FILE* inputFile = fopen(argv[1], "r");
 
@@ -62,13 +59,33 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    int linenum = 0;
+    int linenum = 1;
 
+    /*
+    LexItem tok;
+    printf("Starting Lexing...\n");
+    
+    while((tok = getNextToken(inputFile, &linenum)).token != DONE && tok.token != ERR)
+    {
+        printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
+        free(tok.lexeme);
+    }
+
+    if(tok.token == DONE)
+    {
+        printf("Successfully Processed Lexemes \n");
+    }
+    else
+    {
+        printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
+    }
+    */
+
+    
     bool status = Prog(inputFile, &linenum);
 
     status ? printf("Successful Parsing.\n") : printf("Unsuccessful Parsing.\n");
+    
 
     fclose(inputFile);
-
-    return 0;
 }

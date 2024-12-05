@@ -125,14 +125,14 @@ bool Prog(FILE* input, int* linenum)
     if(tok.token == ERR)
     {
         char buffer[27 + strlen(tok.lexeme)];
-        sprintf(buffer, "Unrecognized Input Pattern %s", tok.lexeme);
+        sprintf(buffer, "Unrecognized Input Pattern <%s>", tok.lexeme);
         free(tok.lexeme);
 
         ParseError(buffer, linenum);
         FreeUtilMaps();
         return false;
     }
-    else if(tok.token != ITEM || tok.token != CHARACTER || tok.token != SCENE)
+    else if(tok.token != ITEM && tok.token != CHARACTER && tok.token != SCENE)
     {
         ParseError("Must Define Elements of Story First!", linenum);
         FreeUtilMaps();
@@ -521,7 +521,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
     {
         free(tok.lexeme);
         ParseError("Missing choice description in Choice.", linenum);
-        return status;
+        return false;
     }
 
     Choice* choice = malloc(sizeof choice);
@@ -544,7 +544,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
         free(choice);
 
         ParseError("Missing -> in Choice.", linenum);
-        return status;
+        return false;
     }
 
     tok = getNextProgToken(input, linenum);
@@ -563,14 +563,13 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
             ParseError("Must have an effect for choice.", linenum);
             return false;
     }
+    
 
-    bool inserted = true;
-    if(!status || !(status = inserted = insertEnd(scene->choices, choice))) 
-    {
-        if(!inserted) ParseError("Failed to insert choice in scene's choices.", linenum);
-        FreeChoice(choice);
-    }
-    return status;
+    if(status && insertEnd(scene->choices, choice)) return true;
+
+    ParseError("Failed to insert choice in scene's choices.", linenum);
+    FreeChoice(choice);
+    return false;
 }
 
 bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
@@ -740,16 +739,6 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 return false;
             }
 
-            int* posScene = getItem(scenes, tok.lexeme);
-
-            if(!posScene)
-            {
-                free(tok.lexeme);
-                free(effect->effectDescription);
-                ParseError("Scene to transfer to hasn't been defined.", linenum);
-                return false;
-            }
-
             effect->action.scene = tok.lexeme;
 
             break;
@@ -765,16 +754,6 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 free(tok.lexeme);
                 free(effect->effectDescription);
                 ParseError("Must provide item name for item receive effect.", linenum);
-                return false;
-            }
-
-            int* posItem = getItem(items, tok.lexeme);
-
-            if(!posItem)
-            {
-                free(tok.lexeme);
-                free(effect->effectDescription);
-                ParseError("Item to be received hasn't been declared.", linenum);
                 return false;
             }
 
@@ -825,25 +804,6 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 }
 
                 tokenizedArgs = strtok(NULL, ".");
-            }
-
-            void* posCharacter = getItem(characters, characterName);
-            if(!posCharacter)
-            {
-                free(effect->effectDescription);
-                ParseError("Character specified does not exist.", linenum);
-                return false;
-            }
-
-            Character* character = (Character*)posCharacter;
-
-            void* posDialogue = getItem(character->dialogueScenes, dialogueName);
-
-            if(!posDialogue)
-            {
-                free(effect->effectDescription);
-                ParseError("Character dialogue specified does not exist.", linenum);
-                return false;
             }
 
             effect->action.character[0] = characterName;

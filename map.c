@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "map.h"
-/*TODO: Fix freeMap implementation to include pointer to custom free function for values*/
 
 static uint64_t hash_key(const char* key)
 {
@@ -145,7 +144,7 @@ bool resizeMap(Map* map)
 	if(newEntries == NULL) return false;
 
 	
-	int i;
+	int i = 0;
 	MapEntry* entry = &map->entries[0];
 
 	while(i < map->capacity)
