@@ -71,7 +71,7 @@ void freeMap(Map* map, void (*freeValue)(void*))
 			previousEntry = currentEntry;
 			currentEntry = currentEntry->next;
 			free(previousEntry->key);
-			(*freeValue)(previousEntry->value);
+			if(freeValue) (*freeValue)(previousEntry->value);
 			free(previousEntry);
 		}
 	}

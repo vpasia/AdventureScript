@@ -31,6 +31,8 @@ const char* tokenToString(Token token)
         case DONE: return "DONE";
         case STRING: return "STRING";
         case NOT: return "NOT";
+        case START: return "START";
+        case END: return "END";
         default: return "ERR";
     }
 }
@@ -80,12 +82,22 @@ int main(int argc, char** argv)
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
     }
     */
+    
 
     
     bool status = Prog(inputFile, &linenum);
 
-    status ? printf("Successful Parsing.\n") : printf("Unsuccessful Parsing.\n");
+    if(status)
+    {
+        printf("Successful Parsing.\n");
+    }
+    else
+    {
+        printf("Unsuccessful Parsing.\n");
+    }    
     
 
     fclose(inputFile);
+
+    return 0;
 }

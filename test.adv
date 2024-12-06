@@ -34,3 +34,5 @@ scene "Castle Gate" {
         choice "No" -> effect "You decide to leave the castle gates behind." scene "Start"
     }
 }
+
+start "Start"

@@ -52,8 +52,8 @@ bool InitializeMaps()
 
 void freeTokenMaps()
 {
-    freeMap(keywords, free);
-    freeMap(delimiters, free);
+    freeMap(keywords, NULL);
+    freeMap(delimiters, NULL);
 }
 
 char* substring(char* str, int start, int end)
