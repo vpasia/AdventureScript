@@ -1,11 +1,11 @@
+#include <stdbool.h>
+#include <ctype.h>
+#include <string.h>
+
 #include "lexer.h"
 #include "map.h"
 
-#include <ctype.h>
-#include <stdbool.h>
-#include <string.h>
-
-typedef enum { START, INID, INSTRING, INCOMMENT } TokenState;
+typedef enum { SSTART, INID, INSTRING, INCOMMENT } TokenState;
 
 Map* keywords = NULL;
 Map* delimiters = NULL;
@@ -24,13 +24,16 @@ bool InitializeMaps()
                         && setItem(keywords, "choice", (void*)CHOICE)
                         && setItem(keywords, "if", (void*)IF)
                         && setItem(keywords, "else", (void*)ELSE)
+                        && setItem(keywords, "not", (void*)NOT)
                         && setItem(keywords, "player", (void*)PLAYER)
                         && setItem(keywords, "receive", (void*)RECEIVE)
                         && setItem(keywords, "has", (void*)HAS)
                         && setItem(keywords, "effect", (void*)EFFECT)
                         && setItem(keywords, "character", (void*)CHARACTER)
                         && setItem(keywords, "dialogue", (void*)DIALOGUE)
-                        && setItem(keywords, "say", (void*)SAY);
+                        && setItem(keywords, "say", (void*)SAY)
+                        && setItem(keywords, "start", (void*)START)
+                        && setItem(keywords, "end", (void*)END);
         
         if(!isAdded) return isAdded;
 
@@ -49,8 +52,24 @@ bool InitializeMaps()
 
 void freeTokenMaps()
 {
-    freeMap(keywords);
-    freeMap(delimiters);
+    freeMap(keywords, free);
+    freeMap(delimiters, free);
+}
+
+char* substring(char* str, int start, int end)
+{
+    int len = end - start;
+    char* substr = malloc(len + 1);
+
+    int i;
+    for(i = 0; i < len; i++)
+    {
+        substr[i] = str[start + i];
+    }
+
+    substr[len] = '\0';
+
+    return substr;
 }
 
 bool addCharToLexeme(Lexeme* lexeme, char character)
@@ -98,10 +117,10 @@ LexItem getNextToken(FILE* input, int* linenum)
 {
     if(!InitializeMaps()) return (LexItem){ERR, "Failed To Initialize Token Maps.", *linenum};
 
-    TokenState state = START;
+    TokenState state = SSTART;
 
     Lexeme lexeme = {malloc(2), 0, 2};
-    if (lexeme.text == NULL) return (LexItem){ERR, "Memory Allocation failed for Lexeme", *linenum};
+    if (!lexeme.text) return (LexItem){ERR, "Memory Allocation failed for Lexeme", *linenum};
     lexeme.text[0] = '\0';
 
     char ch;
@@ -110,7 +129,7 @@ LexItem getNextToken(FILE* input, int* linenum)
     {
         switch(state)
         {
-            case START:
+            case SSTART:
                 if(ch == '\n' && lexeme.index == 0)
                 {
                     (*linenum)++;
@@ -150,10 +169,15 @@ LexItem getNextToken(FILE* input, int* linenum)
                 }
 
                 int* posDelim = (int*)getItem(delimiters, lexeme.text);
-                if(posDelim != NULL)
+
+                if(posDelim)
                 {
                     Token token = (Token)(intptr_t)posDelim;
                     return (LexItem) {token, lexeme.text, *linenum};
+                }
+                else if(lexeme.index > 1)
+                {
+                    return (LexItem) {ERR, lexeme.text, *linenum};
                 }
 
                 break;
@@ -193,11 +217,6 @@ LexItem getNextToken(FILE* input, int* linenum)
             case INSTRING:
                 if(ch == '\n')
                 {
-                    if(!refitLexemeBuffer(&lexeme))
-                    {
-                        free(lexeme.text);
-                        return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
-                    }
                     return (LexItem) {ERR, lexeme.text, *linenum};
                 }
 
@@ -209,22 +228,20 @@ LexItem getNextToken(FILE* input, int* linenum)
 
                 if(ch == '"')
                 {
-                    if(!refitLexemeBuffer(&lexeme))
-                    {
-                        free(lexeme.text);
-                        return (LexItem){ERR, "Unable to Reallocate Memory for Lexeme", *linenum};
-                    }
-                    return (LexItem){STRING, lexeme.text, *linenum};
+                    char* actualString = substring(lexeme.text, 1, lexeme.index - 1);
+                    free(lexeme.text);
+
+                    return (LexItem){STRING, actualString, *linenum};
                 }
                 break;
             
             case INCOMMENT:
                 if(ch == '\n')
                 {
-                    state = START;
+                    state = SSTART;
                     free(lexeme.text);
                     lexeme.text = malloc(2);
-                    lexeme.text[1] = '\0';
+                    lexeme.text[0] = '\0';
 
                     lexeme.index = 0;
                     lexeme.length = 2;
