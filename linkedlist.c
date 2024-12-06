@@ -46,6 +46,7 @@ bool insertEnd(LinkedList* list, void* value)
 	if(!list->head)
 	{
 		list->head = node;
+		list->tail = node;
 	}
 	else if(!list->head->next)
 	{

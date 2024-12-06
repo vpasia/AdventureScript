@@ -563,12 +563,18 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
             ParseError("Must have an effect for choice.", linenum);
             return false;
     }
+
+    bool inserted;
+    if(status && (inserted = insertEnd(scene->choices, choice))) 
+    {
+        return true;
+    }
+    else if(!inserted)
+    {
+        ParseError("Failed to insert choice in scene's choices.", linenum);
+        FreeChoice(choice);
+    }
     
-
-    if(status && insertEnd(scene->choices, choice)) return true;
-
-    ParseError("Failed to insert choice in scene's choices.", linenum);
-    FreeChoice(choice);
     return false;
 }
 
@@ -789,9 +795,10 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             free(tok.lexeme);
 
-            char *characterName = tokenizedArgs, *dialogueName;
+            char *characterName = tokenizedArgs, *dialogueName = NULL;
+            tokenizedArgs = strtok(NULL, ".");
 
-            while(tokenizedArgs)
+            do
             {
                 if(!dialogueName)
                 {
@@ -799,12 +806,13 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 }
                 else
                 {
+                    printf("%s\n", tokenizedArgs); 
                     ParseError("Invalid argument for dialogue effect. [Must be in form \"Character.Dialogue\"]", linenum);
                     return false;
                 }
 
                 tokenizedArgs = strtok(NULL, ".");
-            }
+            } while(tokenizedArgs);
 
             effect->action.character[0] = characterName;
             effect->action.character[1] = dialogueName;
@@ -814,12 +822,15 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
         case END:
             effect->end = true;
+            break;
             
         default:
             free(effect->effectDescription);
             ParseError("Effect must transition to next scene/dialogue or give player an item.", linenum);
             return false;
     }
+
+    return true;
 }
 
 bool SceneDefinition(FILE* input, int* linenum)
