@@ -826,6 +826,17 @@ bool SceneDefinition(FILE* input, int* linenum)
 {
     LexItem tok = getNextProgToken(input, linenum);
 
+    if(tok.token != SCENE)
+    {
+        free(tok.lexeme);
+        ParseError("Missing scene keyword.", linenum);
+        return false;
+    }
+
+    free(tok.lexeme);
+
+    tok = getNextProgToken(input, linenum);
+
     if(tok.token != STRING)
     {
         free(tok.lexeme);
@@ -931,14 +942,6 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     tok = getNextProgToken(input, linenum);
 
-    if(tok.token == SCENE)
-    {
-        free(tok.lexeme);
-        return SceneDefinition(input, linenum);
-    }
-    else
-    {
-        pushBackToken(&tok);
-        return status;
-    }
+    pushBackToken(&tok);
+    return tok.token == SCENE ? SceneDefinition(input, linenum) : status;
 }
