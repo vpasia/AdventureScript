@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "map.h"
+#include "utils.h"
 
 static uint64_t hash_key(const char* key)
 {
@@ -18,17 +19,6 @@ static uint64_t hash_key(const char* key)
 	}
 
 	return hash;
-}
-
-static char* strdupl(const char* s) 
-{
-	size_t len = strlen(s) + 1;
-	char* copy = malloc(len);
-	if (copy) 
-	{
-		memcpy(copy, s, len);
-	}
-	return copy;
 }
 
 

@@ -1,9 +1,11 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "lexer.h"
 #include "map.h"
+#include "utils.h"
 
 typedef enum { SSTART, INID, INSTRING, INCOMMENT } TokenState;
 
@@ -54,22 +56,6 @@ void freeTokenMaps()
 {
     freeMap(keywords, NULL);
     freeMap(delimiters, NULL);
-}
-
-char* substring(char* str, int start, int end)
-{
-    int len = end - start;
-    char* substr = malloc(len + 1);
-
-    int i;
-    for(i = 0; i < len; i++)
-    {
-        substr[i] = str[start + i];
-    }
-
-    substr[len] = '\0';
-
-    return substr;
 }
 
 bool addCharToLexeme(Lexeme* lexeme, char character)

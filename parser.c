@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "parser.h"
+#include "utils.h"
 
 #define ParseError(message, linenum) printf("%d: %s \n", *linenum, message);
 
@@ -11,7 +12,7 @@ Map* playerInventory = NULL;
 Map* items = NULL;
 Map* characters = NULL;
 
-static pushedBack = false;
+static bool pushedBack = false;
 static LexItem pushedBackToken;
 
 LexItem getNextProgToken(FILE* input, int* linenum)
@@ -34,8 +35,6 @@ void pushBackToken(LexItem* token)
     pushedBackToken = *token;
 }
 
-
-
 void FreeEffect(Effect* effect)
 {
     free(effect->effectDescription);
@@ -57,7 +56,7 @@ void FreeEffect(Effect* effect)
         case CH:
         {
             int i;
-            for(i = 0; i < sizeof effect->action.character / sizeof effect->action.character[0]; i++)
+            for(i = 0; i < sizeof(effect->action.character) / sizeof(effect->action.character[0]); i++)
             {
                 free(effect->action.character[i]);
             }
@@ -124,11 +123,21 @@ bool Prog(FILE* input, int* linenum)
 
     if(tok.token == ERR)
     {
-        char buffer[27 + strlen(tok.lexeme)];
-        sprintf(buffer, "Unrecognized Input Pattern <%s>", tok.lexeme);
-        free(tok.lexeme);
+        char* buffer = malloc(30 + strlen(tok.lexeme) + 1);
 
-        ParseError(buffer, linenum);
+        if(buffer)
+        {
+            sprintf(buffer, "Unrecognized Input Pattern <%s>", tok.lexeme);
+            free(tok.lexeme);
+
+            ParseError(buffer, linenum);
+            free(buffer);
+        }
+        else
+        {
+            ParseError("Failed to allocate memory for unrecognized input pattern error :(", linenum);
+        }
+
         FreeUtilMaps();
         return false;
     }
@@ -148,14 +157,15 @@ bool Prog(FILE* input, int* linenum)
         return false;
     }
 
-    if(!SceneDefinition(input, linenum))
+    while((tok = getNextProgToken(input, linenum)).token == SCENE)
     {
-        ParseError("Incorrect Scene Definition in Program", linenum);
-        FreeUtilMaps();
-        return false;
+        if(!SceneDefinition(input, linenum))
+        {
+            ParseError("Incorrect Scene Definition in Program", linenum);
+            FreeUtilMaps();
+            return false;
+        }
     }
-
-    tok = getNextProgToken(input, linenum);
     free(tok.lexeme);
 
     if(tok.token != START)
@@ -164,7 +174,6 @@ bool Prog(FILE* input, int* linenum)
         FreeUtilMaps();
         return false;
     }
-
     
     tok = getNextProgToken(input, linenum);
 
@@ -176,13 +185,15 @@ bool Prog(FILE* input, int* linenum)
     }
 
     /* TODO: Segway into game simulator */
+    /* For now free util maps to avoid leak */
 
+    FreeUtilMaps();
     return true;
 }
 
 bool Decl(FILE* input, int* linenum)
 {
-    bool status;
+    bool status = false;
     LexItem tok = getNextProgToken(input, linenum);
 
     switch(tok.token)
@@ -781,7 +792,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
                 return false;
             }
 
-            char chArgs[strlen(tok.lexeme)];
+            char* chArgs = malloc(strlen(tok.lexeme) + 1);
             strcpy(chArgs, tok.lexeme);
 
             char* tokenizedArgs = strtok(chArgs, ".");
@@ -795,24 +806,18 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             free(tok.lexeme);
 
-            char *characterName = tokenizedArgs, *dialogueName = NULL;
+            char *characterName = strdupl(tokenizedArgs), *dialogueName = NULL;
             tokenizedArgs = strtok(NULL, ".");
 
-            do
-            {
-                if(!dialogueName)
-                {
-                    dialogueName = tokenizedArgs;
-                }
-                else
-                {
-                    printf("%s\n", tokenizedArgs); 
-                    ParseError("Invalid argument for dialogue effect. [Must be in form \"Character.Dialogue\"]", linenum);
-                    return false;
-                }
+            dialogueName = strdupl(tokenizedArgs);
+            tokenizedArgs = strtok(NULL, ".");
 
-                tokenizedArgs = strtok(NULL, ".");
-            } while(tokenizedArgs);
+            if(tokenizedArgs)
+            {
+                free(chArgs);
+                ParseError("Invalid argument for dialogue effect. [Must be in form \"Character.Dialogue\"]", linenum);
+                return false;
+            }
 
             effect->action.character[0] = characterName;
             effect->action.character[1] = dialogueName;
@@ -836,17 +841,6 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 bool SceneDefinition(FILE* input, int* linenum)
 {
     LexItem tok = getNextProgToken(input, linenum);
-
-    if(tok.token != SCENE)
-    {
-        free(tok.lexeme);
-        ParseError("Missing scene keyword.", linenum);
-        return false;
-    }
-
-    free(tok.lexeme);
-
-    tok = getNextProgToken(input, linenum);
 
     if(tok.token != STRING)
     {
@@ -951,8 +945,5 @@ bool SceneDefinition(FILE* input, int* linenum)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-
-    pushBackToken(&tok);
-    return tok.token == SCENE ? SceneDefinition(input, linenum) : status;
+    return true;
 }
