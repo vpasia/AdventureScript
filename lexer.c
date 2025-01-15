@@ -19,6 +19,8 @@ bool InitializeMaps()
         keywords = createMap();
         delimiters = createMap();
 
+        if(keywords == NULL || delimiters == NULL) return false;
+
         bool isAdded = setItem(keywords, "item", (void*)ITEM)
                         && setItem(keywords, "scene", (void*)SCENE)
                         && setItem(keywords, "describe", (void*)DESCRIBE)

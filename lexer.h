@@ -32,4 +32,6 @@ typedef struct
 
 LexItem getNextToken(FILE* input, int* linenum);
 
+void freeTokenMaps();
+
 #endif

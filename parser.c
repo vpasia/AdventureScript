@@ -99,6 +99,7 @@ void FreeUtilMaps()
     freeMap(playerInventory, free);
     freeMap(items, free);
     freeMap(characters, (void (*)(void*))FreeCharacter);
+    freeTokenMaps();
 }
 
 bool InitializeUtilMaps()
@@ -535,7 +536,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
         return false;
     }
 
-    Choice* choice = malloc(sizeof choice);
+    Choice* choice = malloc(sizeof(Choice));
 
     if(!choice)
     {
@@ -850,7 +851,7 @@ bool SceneDefinition(FILE* input, int* linenum)
     }
 
     char* sceneName = tok.lexeme;
-    Scene* scene = malloc(sizeof scene);
+    Scene* scene = malloc(sizeof(Scene));
 
     if(!scene)
     {

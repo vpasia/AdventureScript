@@ -111,7 +111,7 @@ bool insertItem(MapEntry* entries, int capacity, int* count, const char* key, vo
 	}
 	else
 	{
-		free((void*)currentEntry->key);
+		free(currentEntry->key);
 		currentEntry->key = strdupl(key);
 		if(currentEntry->key == NULL)
 		{
