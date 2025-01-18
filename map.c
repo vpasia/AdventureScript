@@ -64,6 +64,12 @@ void freeMap(Map* map, void (*freeValue)(void*))
 			if(freeValue) (*freeValue)(previousEntry->value);
 			free(previousEntry);
 		}
+
+		if(map->entries[i].key != NULL)
+		{
+			free(map->entries[i].key);
+			if(freeValue) (*freeValue)(map->entries[i].value);
+		}
 	}
 
 	free(map->entries);

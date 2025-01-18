@@ -7,7 +7,7 @@
 #include "linkedlist.h"
 #include "map.h"
 
-typedef enum {SC, IT, CH} EffectType;
+typedef enum {SC, IT, CH, ED} EffectType;
 
 typedef struct
 {

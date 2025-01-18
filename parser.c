@@ -96,8 +96,8 @@ void FreeCharacter(Character* character)
 void FreeUtilMaps()
 {
     freeMap(scenes, (void (*)(void*))FreeScene);
-    freeMap(playerInventory, free);
-    freeMap(items, free);
+    freeMap(playerInventory, NULL);
+    freeMap(items, NULL);
     freeMap(characters, (void (*)(void*))FreeCharacter);
     freeTokenMaps();
 }
@@ -576,7 +576,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
             return false;
     }
 
-    bool inserted;
+    bool inserted = true;
     if(status && (inserted = insertEnd(scene->choices, choice))) 
     {
         return true;
@@ -758,6 +758,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
             }
 
             effect->action.scene = tok.lexeme;
+	    effect->end = false;
 
             break;
         }
@@ -776,6 +777,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
             }
 
             effect->action.item = tok.lexeme;
+	    effect->end = false;
 
             break;
         }
@@ -822,11 +824,14 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             effect->action.character[0] = characterName;
             effect->action.character[1] = dialogueName;
+	    effect->end = false;
 
             break;
         }
 
         case END:
+	    effect->type = ED;
+	    effect->action.item = NULL;
             effect->end = true;
             break;
             
