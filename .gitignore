@@ -1,0 +1,12 @@
+*.exe
+*.out
+*.o
+*.so
+*.a
+*.dll
+*.dylib
+*.bin
+
+.vscode/
+
+ads

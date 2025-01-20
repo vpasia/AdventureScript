@@ -1,8 +1,8 @@
-#include "lexer.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "parser.h"
 
 const char* tokenToString(Token token) 
 {
@@ -30,30 +30,11 @@ const char* tokenToString(Token token)
         case ARROW: return "->";
         case DONE: return "DONE";
         case STRING: return "STRING";
+        case NOT: return "NOT";
+        case START: return "START";
+        case END: return "END";
         default: return "ERR";
     }
-}
-
-int indexOf(char* str, char ch)
-{
-    char* pos = strchr(str, ch);
-    return pos ? pos - str : -1;
-}
-
-char* substring(char* str, int start, int end)
-{
-    int len = end - start;
-    char* substr = malloc(len + 1);
-
-    int i;
-    for(i = 0; i < len; i++)
-    {
-        substr[i] = str[start + i];
-    }
-
-    substr[len] = '\0';
-
-    return substr;
 }
 
 int main(int argc, char** argv)
@@ -64,16 +45,13 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    char* fileExtension = substring(argv[1], indexOf(argv[1], '.'), strlen(argv[1]));
+    char* fileExtension = strrchr(argv[1], '.');
 
     if(strcmp(fileExtension, ".adv") != 0)
     {
         printf("INVALID PROGRAM FILE INPUTTED. \n");
-        free(fileExtension);
         exit(1);
     }
-
-    free(fileExtension);
 
     FILE* inputFile = fopen(argv[1], "r");
 
@@ -83,8 +61,10 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    LexItem tok;
     int linenum = 1;
+
+    /*
+    LexItem tok;
     printf("Starting Lexing...\n");
     
     while((tok = getNextToken(inputFile, &linenum)).token != DONE && tok.token != ERR)
@@ -101,8 +81,21 @@ int main(int argc, char** argv)
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
     }
+    */
     
-    free(tok.lexeme);
+
+    
+    bool status = Prog(inputFile, &linenum);
+
+    if(status)
+    {
+        printf("Successful Parsing.\n");
+    }
+    else
+    {
+        printf("Unsuccessful Parsing.\n");
+    }    
+    
 
     fclose(inputFile);
 

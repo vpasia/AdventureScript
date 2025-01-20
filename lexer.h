@@ -7,13 +7,13 @@
 typedef enum 
 {
     ITEM = 1, SCENE, DESCRIBE,
-    ASK, CHOICE, IF, ELSE,
+    ASK, CHOICE, IF, ELSE, NOT,
     PLAYER, DOT, RECEIVE, HAS, 
     EFFECT, CHARACTER, STRING, 
     DIALOGUE, SAY, ARROW,
     LCURLY, RCURLY, 
     LPAREN, RPAREN, 
-    ERR, DONE
+    ERR, DONE, START, END
 } Token;
 
 typedef struct
@@ -31,5 +31,7 @@ typedef struct
 } Lexeme;
 
 LexItem getNextToken(FILE* input, int* linenum);
+
+void freeTokenMaps();
 
 #endif
