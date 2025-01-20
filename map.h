@@ -12,6 +12,7 @@ typedef struct MapEntry
 	char* key;
 	void* value;
 	struct MapEntry* next;
+	bool isConstKey;
 } MapEntry;
 
 typedef struct 
@@ -24,7 +25,7 @@ typedef struct
 Map* createMap();
 void freeMap(Map* map, void (*freeValue)(void*));
 
-bool setItem(Map* map, const char* key, void* value);
-void* getItem(Map* map, const char* key);
+bool setItem(Map* map, char* key, void* value, bool isConstKey);
+void* getItem(Map* map, char* key);
 
 #endif

@@ -35,6 +35,13 @@ void pushBackToken(LexItem* token)
     pushedBackToken = *token;
 }
 
+LexItem getNextNSToken(FILE* input, int* linenum)
+{
+	LexItem tok = getNextProgToken(input, linenum);
+	free(tok.lexeme);
+	return tok;
+}
+
 void FreeEffect(Effect* effect)
 {
     free(effect->effectDescription);
@@ -55,14 +62,9 @@ void FreeEffect(Effect* effect)
 
         case CH:
         {
-            int i;
-            for(i = 0; i < sizeof(effect->action.character) / sizeof(effect->action.character[0]); i++)
-            {
-                free(effect->action.character[i]);
-            }
+	    free(effect->action.character[2]);
             break;
         }
-            
     }
 }
 
@@ -71,12 +73,14 @@ void FreeConditionalStmt(ConditionalStmt* conditional)
     free(conditional->itemCondition);
     FreeEffect(&conditional->ifEffect);
     FreeEffect(&conditional->elseEffect);
+    free(conditional);
 }
 
 void FreeChoice(Choice* choice)
 {
     free(choice->choiceDescription);
-    choice->effect.effectDescription ? FreeEffect(&choice->effect) : FreeConditionalStmt(&choice->conditional); 
+    choice->effect.effectDescription ? FreeEffect(&choice->effect) : FreeConditionalStmt(&choice->conditional);
+    free(choice); 
 }
 
 void FreeScene(Scene* scene)
@@ -158,7 +162,9 @@ bool Prog(FILE* input, int* linenum)
         return false;
     }
 
-    while((tok = getNextProgToken(input, linenum)).token == SCENE)
+    tok = getNextNSToken(input, linenum);
+
+    while(tok.token == SCENE)
     {
         if(!SceneDefinition(input, linenum))
         {
@@ -166,8 +172,9 @@ bool Prog(FILE* input, int* linenum)
             FreeUtilMaps();
             return false;
         }
+
+       	tok = getNextNSToken(input, linenum);
     }
-    free(tok.lexeme);
 
     if(tok.token != START)
     {
@@ -188,6 +195,7 @@ bool Prog(FILE* input, int* linenum)
     /* TODO: Segway into game simulator */
     /* For now free util maps to avoid leak */
 
+    free(tok.lexeme);
     FreeUtilMaps();
     return true;
 }
@@ -232,7 +240,7 @@ bool ItemDecl(FILE* input, int* linenum)
         return false;
     }
 
-    if(!setItem(items, tok.lexeme, (void*)true))
+    if(!setItem(items, tok.lexeme, (void*)true, false))
     {
         free(tok.lexeme);
         ParseError("Failed to add Item in declared items.", linenum);
@@ -274,8 +282,7 @@ bool CharacterDecl(FILE* input, int* linenum)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != LCURLY)
     {
@@ -286,8 +293,7 @@ bool CharacterDecl(FILE* input, int* linenum)
         return false;
     }
     
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != DIALOGUE)
     {
@@ -308,8 +314,7 @@ bool CharacterDecl(FILE* input, int* linenum)
             return false;
         }
 
-        tok = getNextProgToken(input, linenum);
-        free(tok.lexeme);
+        tok = getNextNSToken(input, linenum);
     }
 
     if(tok.token != RCURLY)
@@ -321,7 +326,7 @@ bool CharacterDecl(FILE* input, int* linenum)
         return false;
     }
 
-    if(!setItem(characters, characterName, character))
+    if(!setItem(characters, characterName, character, false))
     {
         free(characterName);
         FreeCharacter(character);
@@ -355,8 +360,7 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != LCURLY)
     {
@@ -367,8 +371,7 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != SAY) 
     {
@@ -393,8 +396,7 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
 
     dialogueScene->description = tok.lexeme;
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != ASK)
     {
@@ -416,8 +418,7 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != RCURLY)
     {
@@ -428,7 +429,7 @@ bool DialogueContent(FILE* input, int* linenum, Character* character)
         return false;
     }
 
-    if(!setItem(character->dialogueScenes, dialogueName, dialogueScene))
+    if(!setItem(character->dialogueScenes, dialogueName, dialogueScene, false))
     {
         free(dialogueName);
         FreeScene(dialogueScene);
@@ -449,8 +450,7 @@ bool AskBlock(FILE* input, int* linenum, Scene* scene)
         case STRING:
             scene->prompt = tok.lexeme;
 
-            tok = getNextProgToken(input, linenum);
-            free(tok.lexeme);
+            tok = getNextNSToken(input, linenum);
 
             if(tok.token != LCURLY)
             {
@@ -480,8 +480,7 @@ bool AskBlock(FILE* input, int* linenum, Scene* scene)
             return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != CHOICE)
     {
@@ -508,8 +507,7 @@ bool AskBlock(FILE* input, int* linenum, Scene* scene)
             return false;
         }
 
-        tok = getNextProgToken(input, linenum);
-        free(tok.lexeme);
+        tok = getNextNSToken(input, linenum);
     }
     
     if(tok.token != RCURLY)
@@ -547,8 +545,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
 
     choice->choiceDescription = tok.lexeme;
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != ARROW)
     {
@@ -559,8 +556,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     switch(tok.token)
     {
@@ -592,8 +588,7 @@ bool ChoiceDefinition(FILE* input, int* linenum, Scene* scene)
 
 bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
 {
-    LexItem tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    LexItem tok = getNextNSToken(input, linenum);
 
     if(tok.token != PLAYER)
     {
@@ -601,8 +596,7 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != DOT)
     {
@@ -610,22 +604,20 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
-
-    if(tok.token != DOT)
-    {
-        ParseError("Missing '.' directive after player in If.", linenum);
-        return false;
-    }
-
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != HAS)
     {
         ParseError("Missing 'has' function call after player in If.", linenum);
         return false;
+    }
+
+    tok = getNextNSToken(input, linenum);
+
+    if(tok.token != LPAREN)
+    {
+	    ParseError("Missing '(' in has function call.", linenum);
+	    return false;
     }
 
     tok = getNextProgToken(input, linenum);
@@ -638,9 +630,16 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
     }
 
     conditional->itemCondition = tok.lexeme;
+    
+    tok = getNextNSToken(input, linenum);
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    if(tok.token != RPAREN)
+    {
+	    ParseError("Missing ')' in has function call.", linenum);
+	    return false;
+    }
+
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != LCURLY)
     {
@@ -649,8 +648,7 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != EFFECT)
     {
@@ -665,8 +663,7 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != RCURLY)
     {
@@ -676,8 +673,7 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != ELSE)
     {
@@ -687,6 +683,8 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
+    tok = getNextNSToken(input, linenum);
+
     if(tok.token != LCURLY)
     {
         free(conditional->itemCondition);
@@ -695,8 +693,7 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != EFFECT)
     {
@@ -713,8 +710,7 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != RCURLY)
     {
@@ -724,8 +720,6 @@ bool IfBlock(FILE* input, int* linenum, ConditionalStmt* conditional)
     }
 }
 
-
-/* Modify implementation to account for marking which scene is the end */
 bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 {
     LexItem tok = getNextProgToken(input, linenum);
@@ -739,8 +733,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
     effect->effectDescription = tok.lexeme;
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     switch(tok.token)
     {
@@ -809,10 +802,10 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             free(tok.lexeme);
 
-            char *characterName = strdupl(tokenizedArgs), *dialogueName = NULL;
+            char *characterName = tokenizedArgs, *dialogueName = NULL;
             tokenizedArgs = strtok(NULL, ".");
 
-            dialogueName = strdupl(tokenizedArgs);
+            dialogueName = tokenizedArgs;
             tokenizedArgs = strtok(NULL, ".");
 
             if(tokenizedArgs)
@@ -824,6 +817,7 @@ bool EffectDefinition(FILE* input, int* linenum, Effect* effect)
 
             effect->action.character[0] = characterName;
             effect->action.character[1] = dialogueName;
+	    effect->action.character[2] = chArgs;
 	    effect->end = false;
 
             break;
@@ -866,8 +860,7 @@ bool SceneDefinition(FILE* input, int* linenum)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != LCURLY)
     {
@@ -877,8 +870,7 @@ bool SceneDefinition(FILE* input, int* linenum)
         return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != DESCRIBE)
     {
@@ -900,8 +892,7 @@ bool SceneDefinition(FILE* input, int* linenum)
 
     scene->description = tok.lexeme;
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     bool status = false;
 
@@ -932,8 +923,7 @@ bool SceneDefinition(FILE* input, int* linenum)
             return false;
     }
 
-    tok = getNextProgToken(input, linenum);
-    free(tok.lexeme);
+    tok = getNextNSToken(input, linenum);
 
     if(tok.token != RCURLY)
     {
@@ -943,7 +933,7 @@ bool SceneDefinition(FILE* input, int* linenum)
         return false;
     }
 
-    if(!setItem(scenes, sceneName, scene))
+    if(!setItem(scenes, sceneName, scene, false))
     {
         free(sceneName);
         FreeScene(scene);

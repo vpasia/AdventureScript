@@ -21,32 +21,32 @@ bool InitializeMaps()
 
         if(keywords == NULL || delimiters == NULL) return false;
 
-        bool isAdded = setItem(keywords, "item", (void*)ITEM)
-                        && setItem(keywords, "scene", (void*)SCENE)
-                        && setItem(keywords, "describe", (void*)DESCRIBE)
-                        && setItem(keywords, "ask", (void*)ASK)
-                        && setItem(keywords, "choice", (void*)CHOICE)
-                        && setItem(keywords, "if", (void*)IF)
-                        && setItem(keywords, "else", (void*)ELSE)
-                        && setItem(keywords, "not", (void*)NOT)
-                        && setItem(keywords, "player", (void*)PLAYER)
-                        && setItem(keywords, "receive", (void*)RECEIVE)
-                        && setItem(keywords, "has", (void*)HAS)
-                        && setItem(keywords, "effect", (void*)EFFECT)
-                        && setItem(keywords, "character", (void*)CHARACTER)
-                        && setItem(keywords, "dialogue", (void*)DIALOGUE)
-                        && setItem(keywords, "say", (void*)SAY)
-                        && setItem(keywords, "start", (void*)START)
-                        && setItem(keywords, "end", (void*)END);
+        bool isAdded = setItem(keywords, "item", (void*)ITEM, true)
+                        && setItem(keywords, "scene", (void*)SCENE, true)
+                        && setItem(keywords, "describe", (void*)DESCRIBE, true)
+                        && setItem(keywords, "ask", (void*)ASK, true)
+                        && setItem(keywords, "choice", (void*)CHOICE, true)
+                        && setItem(keywords, "if", (void*)IF, true)
+                        && setItem(keywords, "else", (void*)ELSE, true)
+                        && setItem(keywords, "not", (void*)NOT, true)
+                        && setItem(keywords, "player", (void*)PLAYER, true)
+                        && setItem(keywords, "receive", (void*)RECEIVE, true)
+                        && setItem(keywords, "has", (void*)HAS, true)
+                        && setItem(keywords, "effect", (void*)EFFECT, true)
+                        && setItem(keywords, "character", (void*)CHARACTER, true)
+                        && setItem(keywords, "dialogue", (void*)DIALOGUE, true)
+                        && setItem(keywords, "say", (void*)SAY, true)
+                        && setItem(keywords, "start", (void*)START, true)
+                        && setItem(keywords, "end", (void*)END, true);
         
         if(!isAdded) return isAdded;
 
-        isAdded = setItem(delimiters, ".", (void*)DOT)
-                    && setItem(delimiters, "{", (void*)LCURLY)
-                    && setItem(delimiters, "}", (void*)RCURLY)
-                    && setItem(delimiters, "(", (void*)LPAREN)
-                    && setItem(delimiters, ")", (void*)RPAREN)
-                    && setItem(delimiters, "->", (void*)ARROW);
+        isAdded = setItem(delimiters, ".", (void*)DOT, true)
+                    && setItem(delimiters, "{", (void*)LCURLY, true)
+                    && setItem(delimiters, "}", (void*)RCURLY, true)
+                    && setItem(delimiters, "(", (void*)LPAREN, true)
+                    && setItem(delimiters, ")", (void*)RPAREN, true)
+                    && setItem(delimiters, "->", (void*)ARROW, true);
         
         return isAdded;
     }

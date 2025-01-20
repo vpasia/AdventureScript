@@ -17,7 +17,7 @@ typedef struct
     {
         char* scene;
         char* item;
-        char* character[2];
+        char* character[3];
     } action;
     bool end;
 } Effect;

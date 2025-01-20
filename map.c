@@ -60,14 +60,15 @@ void freeMap(Map* map, void (*freeValue)(void*))
 		{
 			previousEntry = currentEntry;
 			currentEntry = currentEntry->next;
-			free(previousEntry->key);
+
+			if(!previousEntry->isConstKey) free(previousEntry->key);
 			if(freeValue) (*freeValue)(previousEntry->value);
 			free(previousEntry);
 		}
 
 		if(map->entries[i].key != NULL)
 		{
-			free(map->entries[i].key);
+			if(!map->entries[i].isConstKey) free(map->entries[i].key);
 			if(freeValue) (*freeValue)(map->entries[i].value);
 		}
 	}
@@ -76,13 +77,13 @@ void freeMap(Map* map, void (*freeValue)(void*))
 	free(map);
 }
 
-bool insertItem(MapEntry* entries, int capacity, int* count, const char* key, void* value)
+bool insertItem(MapEntry* entries, int capacity, int* count, char* key, void* value, bool isConstKey)
 {
 	uint64_t hash = hash_key(key);
 	size_t index = (size_t)(hash & (uint64_t)(capacity - 1));
 
 	MapEntry* currentEntry = &entries[index];
-	MapEntry* previousEntry = NULL;
+	MapEntry* previousEntry;
 
 	while(currentEntry != NULL && currentEntry->key != NULL)
 	{
@@ -96,34 +97,22 @@ bool insertItem(MapEntry* entries, int capacity, int* count, const char* key, vo
 
 	if(currentEntry == NULL)
 	{
-		if(previousEntry != NULL)
-		{
-			currentEntry = malloc(sizeof(MapEntry));
-			if(currentEntry == NULL)
-			{
-				return false;
-			}
-			previousEntry->next = currentEntry;
-		}
+		currentEntry = malloc(sizeof(MapEntry));
+		if(!currentEntry) return false;
+		previousEntry->next = currentEntry;
 
-		currentEntry->key = strdupl(key);
-		if(currentEntry->key == NULL)
-		{
-			return false;
-		}
-
+		currentEntry->key = key;
+		currentEntry->isConstKey = isConstKey;
 		currentEntry->value = value;
 		currentEntry->next = NULL;
 	}
 	else
 	{
-		free(currentEntry->key);
-		currentEntry->key = strdupl(key);
-		if(currentEntry->key == NULL)
+		if(!currentEntry->key)
 		{
-			return false;
-		}
-
+			currentEntry->key = key;
+			currentEntry->isConstKey = isConstKey;
+		} 
 		currentEntry->value = value;
 	}
 
@@ -147,7 +136,7 @@ bool resizeMap(Map* map)
 	{
 		if(entry && entry->key)
 		{
-			if(!insertItem(newEntries, newCapacity, &newCount, entry->key, entry->value))
+			if(!insertItem(newEntries, newCapacity, &newCount, entry->key, entry->value, entry->isConstKey))
 			{
 				free(newEntries);
 				return false;
@@ -157,9 +146,8 @@ bool resizeMap(Map* map)
 		entry = entry->next ? entry->next : &map->entries[++i];
 	}
 
-	
 	for(i = 0; i < map->capacity; i++)
-	{    
+	{
 		MapEntry* previousEntry = map->entries[i].next;
 		MapEntry* currentEntry = previousEntry;
 
@@ -167,11 +155,9 @@ bool resizeMap(Map* map)
 		{
 			previousEntry = currentEntry;
 			currentEntry = currentEntry->next;
-			free(previousEntry->key);
 			free(previousEntry);
 		}
 	}
-	
 
 	free(map->entries);
 	map->entries = newEntries;
@@ -181,14 +167,13 @@ bool resizeMap(Map* map)
 	return true;
 }
 
-bool setItem(Map* map, const char* key, void* value)
+bool setItem(Map* map, char* key, void* value, bool isConstKey)
 {
 	if(map->count == map->capacity && !resizeMap(map)) return false;
-	
-	return insertItem(map->entries, map->capacity, &map->count, key, value);
+	return insertItem(map->entries, map->capacity, &map->count, key, value, isConstKey);
 }
 
-void* getItem(Map* map, const char* key)
+void* getItem(Map* map, char* key)
 {
 	uint64_t hash = hash_key(key);
 	size_t index = (size_t)(hash & (uint64_t)(map->capacity - 1));
