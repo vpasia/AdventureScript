@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-#include "parser.h"
+#include "lexer.h"
 
 const char* tokenToString(Token token) 
 {
@@ -39,38 +41,54 @@ const char* tokenToString(Token token)
 
 int main(int argc, char** argv)
 {
+    int fd, statRes, linenum;
+    char *fileExtension, *mappedFile;
+    struct stat statBuf;
+    size_t size;
+    Scanner scanner;
+
     if(argc < 2)
     {
-        printf("NO SPECIFIED INPUT FILE. \n");
+        fprintf(stderr, "NO SPECIFIED INPUT FILE. \n");
         exit(1);
     }
 
-    char* fileExtension = strrchr(argv[1], '.');
+    fileExtension = strrchr(argv[1], '.');
 
     if(strcmp(fileExtension, ".adv") != 0)
     {
-        printf("INVALID PROGRAM FILE INPUTTED. \n");
+        fprintf(stderr, "INVALID PROGRAM FILE INPUTTED. \n");
         exit(1);
     }
 
-    FILE* inputFile = fopen(argv[1], "r");
+    fd = fopen(argv[1], O_RDONLY);
 
-    if(inputFile == NULL)
+    if(fd == -1)
     {
-        printf("CANNOT OPEN THE FILE %s \n", argv[1]);
+        fprintf(stderr, "CANNOT OPEN THE FILE %s \n", argv[1]);
         exit(1);
     }
 
-    int linenum = 1;
+    statRes = stat(argv[1], &statBuf);
 
-    /*
+    if(statRes == -1)
+    {
+        fprintf(stderr, "CANNOT STAT %s \n", argv[1]);
+        exit(1);
+    }
+
+    size = statBuf.st_size;
+
+    mappedFile = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+    linenum = 1;
+
     LexItem tok;
     printf("Starting Lexing...\n");
     
     while((tok = getNextToken(inputFile, &linenum)).token != DONE && tok.token != ERR)
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
-        free(tok.lexeme);
     }
 
     if(tok.token == DONE)
@@ -81,20 +99,20 @@ int main(int argc, char** argv)
     {
         printf("%d: %s -> %s \n", linenum, tok.lexeme, tokenToString(tok.token));
     }
-    */
+    
     
 
     
-    bool status = Prog(inputFile, &linenum);
+    // bool status = Prog(inputFile, &linenum);
 
-    if(status)
-    {
-        printf("Successful Parsing.\n");
-    }
-    else
-    {
-        printf("Unsuccessful Parsing.\n");
-    }    
+    // if(status)
+    // {
+    //     printf("Successful Parsing.\n");
+    // }
+    // else
+    // {
+    //     printf("Unsuccessful Parsing.\n");
+    // }    
     
 
     fclose(inputFile);

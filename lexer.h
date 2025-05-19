@@ -18,17 +18,22 @@ typedef enum
 
 typedef struct
 {
-    Token token;
-    char* lexeme;
-    int linenum;
-} LexItem;
+    char* scanner;
+    char* end;
+} Scanner;
 
 typedef struct
 {
-    char* text;
-    int index;
+    char* start;
     size_t length;
 } Lexeme;
+
+typedef struct
+{
+    Token token;
+    Lexeme lexeme;
+    int linenum;
+} LexItem;
 
 LexItem getNextToken(FILE* input, int* linenum);
 
